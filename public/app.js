@@ -314,15 +314,47 @@ if (socket) {
 
   socket.on("connect_error", () => {
     showToast("Koneksi chat publik terputus, mencoba menyambung lagi...");
+    if (btnSend) btnSend.disabled = true;
   });
+
+  socket.on("disconnect", () => {
+    if (btnSend) btnSend.disabled = true;
+  });
+
+  socket.on("connect", () => {
+    if (btnSend) btnSend.disabled = false;
+  });
+} else {
+  // Library socket.io-client gagal dimuat (mis. server belum siap / offline).
+  if (btnSend) btnSend.disabled = true;
+  showToast("Gagal memuat chat publik, coba refresh halaman.");
 }
 
 function kirimChat(pesanAwal) {
   const text = (pesanAwal ?? chatInput.value).trim();
-  if (!text || !socket) return;
+  if (!text) return;
+
+  // Kalau socket belum ada / belum tersambung, jangan diam-diam gagal —
+  // beri tahu pengguna & jangan hapus teks yang sudah diketik.
+  if (!socket || !socket.connected) {
+    showToast("Belum tersambung ke chat publik, coba lagi sebentar...");
+    return;
+  }
+
   chatInput.value = "";
   chatInput.style.height = "auto";
-  socket.emit("chat:message", { text });
+
+  // Pakai acknowledgment dari server (dengan timeout) supaya kalau pesan
+  // gagal sampai (mis. koneksi putus di tengah jalan), pengguna tahu dan
+  // teksnya bisa dikembalikan ke kotak input, bukan hilang begitu saja.
+  socket
+    .timeout(5000)
+    .emit("chat:message", { text }, (err, response) => {
+      if (err || !response || response.ok === false) {
+        showToast("Pesan gagal terkirim, coba lagi ya.");
+        if (!chatInput.value) chatInput.value = text;
+      }
+    });
 }
 
 btnSend.addEventListener("click", () => kirimChat());
