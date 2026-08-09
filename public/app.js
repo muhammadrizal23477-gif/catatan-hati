@@ -5,6 +5,7 @@
   const entryVideo = document.getElementById("entry-video");
   const entryAudio = document.getElementById("entry-audio");
   const soundBtn = document.getElementById("entry-sound-btn");
+  const soundLabel = document.getElementById("entry-sound-label");
   const btnMasuk = document.getElementById("btn-masuk");
 
   // Sembunyikan konten inti aplikasi sampai user menekan "Masuk ke Aplikasi"
@@ -16,7 +17,9 @@
 
   soundBtn?.addEventListener("click", () => {
     entryVideo.muted = !entryVideo.muted;
-    soundBtn.classList.toggle("unmuted", !entryVideo.muted);
+    const unmuted = !entryVideo.muted;
+    soundBtn.classList.toggle("unmuted", unmuted);
+    if (soundLabel) soundLabel.textContent = unmuted ? "Suara video aktif" : "Aktifkan suara video";
   });
 
   btnMasuk?.addEventListener("click", () => {
