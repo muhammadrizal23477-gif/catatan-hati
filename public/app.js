@@ -23,17 +23,35 @@
       document.removeEventListener("click", putarSaatInteraksi);
       document.removeEventListener("touchstart", putarSaatInteraksi);
     };
-    document.addEventListener("click", putarSaatInteraksi, { once: true });
-    document.addEventListener("touchstart", putarSaatInteraksi, { once: true });
+    document.addEventListener("click", putarSaatInteraksi, { once: true, capture: true });
+    document.addEventListener("touchstart", putarSaatInteraksi, { once: true, capture: true });
   }
 
   btnMasuk?.addEventListener("click", () => {
     entryScreen.classList.add("entry-hidden");
     shell.classList.remove("hidden");
 
-    // Hentikan video & audio pembuka begitu masuk ke aplikasi
+    // Hentikan video langsung, tapi beri musik pembuka jeda singkat (fade out)
+    // supaya tetap sempat terdengar meski tap pertama pengguna langsung di
+    // tombol ini (musik baru sempat mulai diputar sepersekian detik sebelumnya).
     entryVideo?.pause();
-    entryAudio?.pause();
+    if (entryAudio && !entryAudio.paused) {
+      const audioAwal = entryAudio;
+      const volumeAwal = audioAwal.volume;
+      const langkah = 12;
+      let i = 0;
+      const fadeTimer = setInterval(() => {
+        i += 1;
+        audioAwal.volume = Math.max(0, volumeAwal * (1 - i / langkah));
+        if (i >= langkah) {
+          clearInterval(fadeTimer);
+          audioAwal.pause();
+          audioAwal.volume = volumeAwal;
+        }
+      }, 60);
+    } else {
+      entryAudio?.pause();
+    }
 
     // Lepas dari DOM flow setelah animasi selesai
     setTimeout(() => {
