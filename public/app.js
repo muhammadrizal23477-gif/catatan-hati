@@ -4,8 +4,6 @@
   const shell = document.getElementById("shell");
   const entryVideo = document.getElementById("entry-video");
   const entryAudio = document.getElementById("entry-audio");
-  const soundBtn = document.getElementById("entry-sound-btn");
-  const soundLabel = document.getElementById("entry-sound-label");
   const btnMasuk = document.getElementById("btn-masuk");
 
   // Sembunyikan konten inti aplikasi sampai user menekan "Masuk ke Aplikasi"
@@ -15,12 +13,19 @@
     entryVideo.play().catch(() => {});
   }
 
-  soundBtn?.addEventListener("click", () => {
-    entryVideo.muted = !entryVideo.muted;
-    const unmuted = !entryVideo.muted;
-    soundBtn.classList.toggle("unmuted", unmuted);
-    if (soundLabel) soundLabel.textContent = unmuted ? "Suara video aktif" : "Aktifkan suara video";
-  });
+  // Coba putar musik pembuka otomatis. Kalau browser memblokir autoplay
+  // bersuara, mainkan begitu ada interaksi pertama dari pengguna.
+  if (entryAudio) {
+    const cobaPutarAudio = () => entryAudio.play().catch(() => {});
+    cobaPutarAudio();
+    const putarSaatInteraksi = () => {
+      cobaPutarAudio();
+      document.removeEventListener("click", putarSaatInteraksi);
+      document.removeEventListener("touchstart", putarSaatInteraksi);
+    };
+    document.addEventListener("click", putarSaatInteraksi, { once: true });
+    document.addEventListener("touchstart", putarSaatInteraksi, { once: true });
+  }
 
   btnMasuk?.addEventListener("click", () => {
     entryScreen.classList.add("entry-hidden");
@@ -170,80 +175,114 @@ btnCopy.addEventListener("click", async () => {
   }
 });
 
-// ---------- TAB 2: Ruang Curhat ----------
+// ---------- TAB 2: Chat Publik (live, terhubung ke semua pengguna) ----------
 const chatScroll = document.getElementById("chat-scroll");
 const chatInput = document.getElementById("chat-input");
 const btnSend = document.getElementById("btn-send");
 const suggestRow = document.getElementById("suggest-row");
-let curhatHistory = []; // {role: "user"|"assistant", content: string}[]
+const chatOnlineCount = document.getElementById("chat-online-count");
+const chatNamaLabel = document.getElementById("chat-nama-label");
+const btnGantiNama = document.getElementById("btn-ganti-nama");
 
-function addBubble(text, role) {
+const NAMA_KEY = "catatan-hati:nama-chat";
+let namaSaya = localStorage.getItem(NAMA_KEY) || "";
+
+function initialAvatar(nama) {
+  return (nama || "?").trim().slice(0, 2).toUpperCase();
+}
+
+function addBubble({ text, name, mine, system }) {
   const row = document.createElement("div");
-  row.className = `bubble-row ${role === "user" ? "user" : "app"}`;
+  row.className = system ? "bubble-row system" : `bubble-row ${mine ? "user" : "app"}`;
+
+  if (system) {
+    const bubble = document.createElement("div");
+    bubble.className = "bubble bubble-system";
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    chatScroll.appendChild(row);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+    return row;
+  }
 
   const avatar = document.createElement("span");
   avatar.className = "avatar";
-  avatar.textContent = role === "user" ? "Kamu" : "CH";
-  if (role === "user") avatar.style.fontSize = "8px";
+  avatar.textContent = mine ? "Kamu" : initialAvatar(name);
+  if (mine) avatar.style.fontSize = "8px";
+
+  const wrap = document.createElement("div");
+  wrap.className = "bubble-col";
+
+  if (!mine && name) {
+    const label = document.createElement("span");
+    label.className = "bubble-name";
+    label.textContent = name;
+    wrap.appendChild(label);
+  }
 
   const bubble = document.createElement("div");
-  bubble.className = `bubble ${role === "user" ? "bubble-user" : "bubble-app"}`;
+  bubble.className = `bubble ${mine ? "bubble-user" : "bubble-app"}`;
   bubble.textContent = text;
+  wrap.appendChild(bubble);
 
   row.appendChild(avatar);
-  row.appendChild(bubble);
-  chatScroll.appendChild(row);
-  chatScroll.scrollTop = chatScroll.scrollHeight;
-  return { row, bubble };
-}
-
-function addTypingBubble() {
-  const row = document.createElement("div");
-  row.className = "bubble-row app";
-  row.innerHTML = `<span class="avatar">CH</span><div class="bubble bubble-app bubble-typing"><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span> menulis balasan</div>`;
+  row.appendChild(wrap);
   chatScroll.appendChild(row);
   chatScroll.scrollTop = chatScroll.scrollHeight;
   return row;
 }
 
-async function kirimCurhat(pesanAwal) {
-  const text = (pesanAwal ?? chatInput.value).trim();
-  if (!text) return;
-  if (suggestRow) suggestRow.classList.add("hidden");
-  chatInput.value = "";
-  chatInput.style.height = "auto";
-  addBubble(text, "user");
-  btnSend.disabled = true;
-  const typingRow = addTypingBubble();
+// ---------- Koneksi live via Socket.IO ----------
+const socket = typeof io === "function" ? io() : null;
 
-  try {
-    const res = await fetch("/api/curhat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, history: curhatHistory }),
+if (socket) {
+  socket.on("connect", () => {
+    if (namaSaya) socket.emit("chat:set-name", namaSaya);
+  });
+
+  socket.on("chat:whoami", ({ nickname }) => {
+    namaSaya = nickname;
+    localStorage.setItem(NAMA_KEY, nickname);
+    if (chatNamaLabel) chatNamaLabel.textContent = nickname;
+  });
+
+  socket.on("chat:online", (jumlah) => {
+    if (chatOnlineCount) chatOnlineCount.textContent = jumlah;
+  });
+
+  socket.on("chat:history", (pesanList) => {
+    (pesanList || []).forEach((p) => {
+      addBubble({ text: p.text, name: p.name, mine: p.senderId === socket.id });
     });
-    const data = await res.json().catch(() => ({}));
-    typingRow.remove();
-    if (!res.ok || !data.reply || !data.reply.trim()) {
-      throw new Error(data.error || "Server tidak memberikan balasan. Coba lagi.");
-    }
-    addBubble(data.reply, "app");
-    curhatHistory.push({ role: "user", content: text });
-    curhatHistory.push({ role: "assistant", content: data.reply });
-    curhatHistory = curhatHistory.slice(-10);
-  } catch (err) {
-    typingRow.remove();
-    addBubble(err.message || "Maaf, aku belum bisa membalas sekarang. Coba kirim lagi sebentar ya.", "app");
-  } finally {
-    btnSend.disabled = false;
-  }
+  });
+
+  socket.on("chat:message", (p) => {
+    if (suggestRow) suggestRow.classList.add("hidden");
+    addBubble({ text: p.text, name: p.name, mine: p.senderId === socket.id });
+  });
+
+  socket.on("chat:care", (p) => {
+    addBubble({ text: p.text, name: "CH", mine: false });
+  });
+
+  socket.on("connect_error", () => {
+    showToast("Koneksi chat publik terputus, mencoba menyambung lagi...");
+  });
 }
 
-btnSend.addEventListener("click", () => kirimCurhat());
+function kirimChat(pesanAwal) {
+  const text = (pesanAwal ?? chatInput.value).trim();
+  if (!text || !socket) return;
+  chatInput.value = "";
+  chatInput.style.height = "auto";
+  socket.emit("chat:message", { text });
+}
+
+btnSend.addEventListener("click", () => kirimChat());
 chatInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
-    kirimCurhat();
+    kirimChat();
   }
 });
 chatInput.addEventListener("input", () => {
@@ -255,7 +294,18 @@ if (suggestRow) {
   suggestRow.addEventListener("click", (e) => {
     const chip = e.target.closest(".suggest-chip");
     if (!chip) return;
-    kirimCurhat(chip.dataset.msg);
+    kirimChat(chip.dataset.msg);
+  });
+}
+
+if (btnGantiNama) {
+  btnGantiNama.addEventListener("click", () => {
+    const nama = window.prompt("Mau dipanggil siapa di Chat Publik?", namaSaya || "");
+    if (nama === null) return;
+    const bersih = nama.trim().slice(0, 24);
+    if (!bersih || !socket) return;
+    socket.emit("chat:set-name", bersih);
+    showToast("Nama diperbarui");
   });
 }
 

@@ -42,15 +42,7 @@
       </div>
 
       <div class="entry-card">
-        <button class="entry-sound-btn" id="entry-sound-btn" title="Aktifkan suara video">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M19 5a10 10 0 0 1 0 14M15.5 8.5a5 5 0 0 1 0 7" stroke-linecap="round" stroke-linejoin="round"/><line x1="3" y1="3" x2="21" y2="21" id="entry-mute-slash"/></svg>
-          <span id="entry-sound-label">Aktifkan suara video</span>
-        </button>
-
-        <div class="entry-audio-row">
-          <span class="entry-audio-label">Musik pembuka</span>
-          <audio id="entry-audio" class="entry-audio" src="/media/intro-audio.mp3" controls loop></audio>
-        </div>
+        <audio id="entry-audio" src="/media/intro-audio.mp3" loop hidden></audio>
 
         <button id="btn-masuk" class="primary-btn entry-btn">
           <span class="btn-label">Masuk ke Aplikasi</span>
@@ -146,27 +138,34 @@
         <audio id="tulis-music" src="/media/tulis-music.mp3" loop preload="none"></audio>
       </section>
 
-      <!-- TAB 2: Ruang Curhat -->
+      <!-- TAB 2: Chat Publik -->
       <section class="panel chat-wrap" id="panel-curhat">
         <div class="section-head chat-head">
-          <span class="eyebrow">Ruang Aman</span>
-          <h2>Curhat &amp; Ngobrol</h2>
-          <p class="chat-subtitle">Cerita perasaanmu atau tanya apa saja — CH siap dengarkan dan bantu jawab.</p>
+          <span class="eyebrow">Ruang Publik</span>
+          <h2>Chat Publik</h2>
+          <p class="chat-subtitle">Ngobrol langsung bareng semua pengguna Catatan Hati, live &amp; real-time. Jaga sopan santun ya 🙂</p>
         </div>
+
+        <div class="chat-namebar">
+          <span class="chat-online-badge"><span class="online-dot"></span><span id="chat-online-count">1</span> online</span>
+          <button id="btn-ganti-nama" class="chat-name-btn" type="button">
+            Nama: <span id="chat-nama-label">Tamu</span>
+          </button>
+        </div>
+
         <div class="chat-scroll" id="chat-scroll">
-          <div class="bubble-row app">
-            <span class="avatar">CH</span>
-            <div class="bubble bubble-app">Hai, aku CH 👋 Ceritakan apa yang sedang kamu rasakan, atau tanya apa saja yang ingin kamu tahu — aku akan coba dengarkan dan bantu sebisaku.</div>
+          <div class="bubble-row system">
+            <div class="bubble bubble-system">Selamat datang di Chat Publik 👋 Semua pesan di sini terlihat oleh semua pengguna yang sedang online.</div>
           </div>
           <div class="suggest-row" id="suggest-row">
-            <button class="suggest-chip" data-msg="Aku lagi capek banget sama semua hal akhir-akhir ini.">Lagi capek banget 😮‍💨</button>
-            <button class="suggest-chip" data-msg="Aku butuh semangat buat lanjutin hari ini.">Butuh semangat</button>
-            <button class="suggest-chip" data-msg="Boleh minta saran cara mengelola waktu biar tidak gampang burnout?">Minta saran praktis</button>
-            <button class="suggest-chip" data-msg="Ceritain satu fakta menarik dong.">Kasih fakta menarik</button>
+            <button class="suggest-chip" data-msg="Halo semuanya! 👋">Sapa semuanya</button>
+            <button class="suggest-chip" data-msg="Lagi ngerasain apa nih hari ini?">Tanya kabar</button>
+            <button class="suggest-chip" data-msg="Ada yang mau saling semangatin?">Saling semangat</button>
+            <button class="suggest-chip" data-msg="Share satu hal kecil yang bikin bersyukur hari ini dong.">Share syukur</button>
           </div>
         </div>
         <div class="chat-input-bar">
-          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Tulis apa yang kamu rasakan atau tanyakan..."></textarea>
+          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Tulis pesan untuk semua orang di sini..."></textarea>
           <button id="btn-send" class="send-btn" aria-label="Kirim">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12l16-8-6 16-3-6-7-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -322,7 +321,7 @@
         <span class="nav-icon">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20s-7-4.35-9.5-9C.8 7.2 3 3.5 7 3.5c2 0 3.7 1.2 5 3 1.3-1.8 3-3 5-3 4 0 6.2 3.7 4.5 7.5C19 15.65 12 20 12 20z" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
-        <span class="nav-label">Curhat</span>
+        <span class="nav-label">Chat Publik</span>
       </button>
       <button class="nav-btn" data-tab="jurnal">
         <span class="nav-icon">
@@ -348,6 +347,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
