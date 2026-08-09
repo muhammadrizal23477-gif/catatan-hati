@@ -475,12 +475,9 @@ function pasangChatPublik(io) {
       socket.emit("chat:whoami", { nickname });
     });
 
-    socket.on("chat:message", (payload, ack) => {
+    socket.on("chat:message", (payload) => {
       const teks = sanitizePesan(payload && payload.text);
-      if (!teks) {
-        if (typeof ack === "function") ack({ ok: false, error: "Pesan kosong." });
-        return;
-      }
+      if (!teks) return;
 
       const pesan = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -493,10 +490,6 @@ function pasangChatPublik(io) {
       if (riwayatChat.length > MAX_RIWAYAT) riwayatChat.shift();
 
       io.emit("chat:message", pesan);
-
-      // Beri tahu pengirim bahwa pesannya sudah berhasil diproses & disiarkan,
-      // supaya UI di client bisa tahu jika ternyata gagal (mis. koneksi putus).
-      if (typeof ack === "function") ack({ ok: true, id: pesan.id });
 
       // Jika pesan mengandung indikasi bahaya, kirim info bantuan
       // secara privat ke pengirim saja (tidak disiarkan ke publik).
