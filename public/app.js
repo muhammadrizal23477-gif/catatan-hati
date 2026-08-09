@@ -222,235 +222,198 @@ btnCopy.addEventListener("click", async () => {
   }
 });
 
-// ---------- TAB 2: Edit Foto (tulis teks di atas foto, seret seperti Markup iPhone) ----------
-const photoInput = document.getElementById("photo-input");
-const btnPilihFoto = document.getElementById("btn-pilih-foto");
-const btnGantiFoto = document.getElementById("btn-ganti-foto");
-const photoEmpty = document.getElementById("photo-empty");
-const photoEditor = document.getElementById("photo-editor");
-const canvasWrap = document.getElementById("canvas-wrap");
-const photoCanvas = document.getElementById("photo-canvas");
-const btnTambahTeks = document.getElementById("btn-tambah-teks");
-const btnHapusTeks = document.getElementById("btn-hapus-teks");
-const btnUnduhFoto = document.getElementById("btn-unduh-foto");
-const teksWarna = document.getElementById("teks-warna");
-const teksUkuran = document.getElementById("teks-ukuran");
+// ---------- TAB 2: Chat Bot Perasaan (respons lokal, tanpa API key) ----------
+const chatScroll = document.getElementById("chat-scroll");
+const chatInput = document.getElementById("chat-input");
+const btnSend = document.getElementById("btn-send");
+const suggestRow = document.getElementById("suggest-row");
 
-let gambarAsli = null; // objek Image() resolusi asli
-let daftarTeks = []; // { id, x, y (persen 0-100 relatif ke canvas tampilan), text, color, size, el }
-let teksTerpilih = null;
+const HOTLINE_INFO =
+  "Kalau rasanya berat sekali, kamu tidak sendirian — coba hubungi layanan Sejiwa di 119 ext 8, atau ceritakan ke orang terdekat yang kamu percaya.";
+const POLA_SIAGA = /(bunuh diri|mengakhiri hidup|nyakitin diri|melukai diri|self ?harm|ingin mati)/i;
 
-function bukaPemilihFoto() {
-  photoInput.value = "";
-  photoInput.click();
-}
-btnPilihFoto?.addEventListener("click", bukaPemilihFoto);
-btnGantiFoto?.addEventListener("click", bukaPemilihFoto);
+// Bank respons lokal per kategori perasaan. Semua diproses di perangkat,
+// tidak memanggil API/AI eksternal mana pun.
+const BANK_RESPON = {
+  sedih: {
+    kata: ["sedih", "nangis", "menangis", "kecewa", "hancur", "gagal", "putus asa", "patah hati", "terpuruk"],
+    balasan: [
+      "Aku dengar kamu lagi sedih. Nggak apa-apa kok kalau mau nangis dulu, itu bukan tanda kamu lemah.",
+      "Kedengarannya berat banget ya hari ini. Aku di sini, cerita aja sepelan yang kamu mau.",
+      "Rasa sedih itu wajar, dan kamu berhak merasakannya tanpa buru-buru 'baik-baik saja'.",
+      "Aku ikut merasakan beratnya. Kalau kamu mau, cerita lebih lanjut apa yang bikin sedih hari ini?",
+    ],
+  },
+  cemas: {
+    kata: ["cemas", "khawatir", "takut", "gelisah", "panik", "overthinking", "was-was"],
+    balasan: [
+      "Cemas itu capek ya, pikiran jadi susah tenang. Coba tarik napas pelan-pelan dulu, aku tunggu.",
+      "Aku dengar kekhawatiranmu. Boleh cerita apa yang paling bikin kamu was-was sekarang?",
+      "Rasa cemas sering bikin pikiran lompat ke skenario terburuk. Pelan-pelan aja, kamu nggak sendirian mikirinnya.",
+      "Wajar kok kalau kamu merasa gelisah. Kadang cukup diakui dulu perasaannya, sebelum dicari solusinya.",
+    ],
+  },
+  marah: {
+    kata: ["marah", "kesal", "emosi", "benci", "jengkel", "sebel"],
+    balasan: [
+      "Kedengarannya kamu lagi kesal banget. Wajar kok marah kalau ada yang bikin nggak nyaman.",
+      "Aku dengar emosimu. Mau cerita apa yang bikin kamu sekesal ini?",
+      "Marah itu sinyal ada batas yang dilanggar. Nggak apa-apa merasakannya, yang penting disalurkan dengan sehat.",
+      "Aku di sini dengerin, nggak perlu ditahan-tahan. Cerita aja apa yang terjadi.",
+    ],
+  },
+  lelah: {
+    kata: ["lelah", "capek", "cape", "burnout", "pengen istirahat", "ngantuk banget"],
+    balasan: [
+      "Kedengarannya kamu udah berusaha keras banget sampai capek gini. Istirahat sebentar itu perlu, bukan malas.",
+      "Lelah fisik atau lelah hati nih? Dua-duanya sama validnya kok untuk diistirahatkan.",
+      "Kamu udah kerja keras. Boleh banget kasih diri sendiri jeda sebentar tanpa merasa bersalah.",
+      "Aku dengar capeknya. Coba pelan-pelan aja dulu, nggak semua harus selesai hari ini.",
+    ],
+  },
+  kesepian: {
+    kata: ["sendiri", "kesepian", "sepi", "gaada teman", "tidak ada teman", "sendirian"],
+    balasan: [
+      "Rasa sepi itu berat ya, meskipun kadang dikelilingi orang. Aku di sini nemenin ceritamu.",
+      "Terima kasih udah cerita ke aku. Perasaan kesepian itu valid, dan nggak berarti kamu nggak berharga.",
+      "Kadang butuh waktu buat nemuin orang yang pas buat cerita. Untuk sekarang, aku dengerin kok.",
+    ],
+  },
+  senang: {
+    kata: ["senang", "bahagia", "bersyukur", "seneng", "gembira", "excited"],
+    balasan: [
+      "Wah, seneng banget dengernya! Cerita dong apa yang bikin harimu secerah ini?",
+      "Ikut bahagia buat kamu! Momen kaya gini layak banget dirayain.",
+      "Bersyukur itu indah ya. Makasih udah mau bagi cerita baiknya ke aku.",
+      "Senyummu kebaca sampai sini. Terus rawat perasaan baik ini ya.",
+    ],
+  },
+  cinta: {
+    kata: ["cinta", "sayang", "kangen", "rindu", "suka sama", "gebetan"],
+    balasan: [
+      "Perasaan itu emang bisa bikin hati rame ya. Cerita lebih lanjut boleh banget.",
+      "Kangen atau sayang yang lagi kamu rasain ini, keduanya valid kok untuk diceritain.",
+      "Urusan hati emang nggak sesederhana kelihatannya. Aku dengerin, pelan-pelan aja ceritanya.",
+    ],
+  },
+  bingung: {
+    kata: ["bingung", "galau", "gatau harus gimana", "gak tau harus apa"],
+    balasan: [
+      "Bingung nentuin arah itu wajar kok, nggak perlu buru-buru mutusin sekarang.",
+      "Aku dengar kegalauanmu. Coba cerita dulu, kadang ngomong keras-keras bikin lebih jelas.",
+      "Nggak apa-apa belum tahu jawabannya sekarang. Yuk pelan-pelan diurai bareng.",
+    ],
+  },
+  semangat: {
+    kata: ["semangat", "motivasi", "pengen sukses", "pengen berubah"],
+    balasan: [
+      "Suka banget sama energimu! Cerita dong rencana atau mimpi yang lagi kamu kejar.",
+      "Semangat itu modal berharga. Aku di sini dukung ceritamu.",
+      "Keren, niat baik kaya gini layak dirayain dari sekarang.",
+    ],
+  },
+};
 
-photoInput?.addEventListener("change", () => {
-  const file = photoInput.files && photoInput.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
-    gambarAsli = img;
-    daftarTeks = [];
-    teksTerpilih = null;
-    canvasWrap.querySelectorAll(".photo-text-layer").forEach((el) => el.remove());
-    gambarKeCanvas();
-    photoEmpty.classList.add("hidden");
-    photoEditor.classList.remove("hidden");
-    URL.revokeObjectURL(url);
-  };
-  img.onerror = () => {
-    showToast("Gagal membuka foto itu, coba foto lain ya.");
-    URL.revokeObjectURL(url);
-  };
-  img.src = url;
-});
+const RESPON_UMUM = [
+  "Aku dengar kok. Cerita lebih banyak boleh, aku nggak buru-buru kok.",
+  "Terima kasih udah mau cerita ke aku. Ada lagi yang mau kamu keluarkan?",
+  "Pelan-pelan aja ceritanya, aku di sini nemenin.",
+  "Boleh cerita lebih detail? Aku pengin ngerti apa yang kamu rasain.",
+];
 
-function gambarKeCanvas() {
-  if (!gambarAsli) return;
-  photoCanvas.width = gambarAsli.naturalWidth;
-  photoCanvas.height = gambarAsli.naturalHeight;
-  const ctx = photoCanvas.getContext("2d");
-  ctx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
-  ctx.drawImage(gambarAsli, 0, 0);
-}
-
-function tambahTeksLayer(xPersen, yPersen) {
-  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const el = document.createElement("div");
-  el.className = "photo-text-layer";
-  el.contentEditable = "true";
-  el.style.left = `${xPersen}%`;
-  el.style.top = `${yPersen}%`;
-  el.style.color = teksWarna.value;
-  el.style.fontSize = `${teksUkuran.value}px`;
-
-  const layer = { id, xPersen, yPersen, color: teksWarna.value, size: Number(teksUkuran.value), el };
-  daftarTeks.push(layer);
-  canvasWrap.appendChild(el);
-  pilihTeks(layer);
-  pasangDragTeks(layer);
-
-  el.addEventListener("focus", () => {
-    el.classList.add("editing");
-    pilihTeks(layer);
-  });
-  el.addEventListener("blur", () => {
-    el.classList.remove("editing");
-    // Hapus otomatis kalau ditinggal kosong tanpa isi teks.
-    if (!el.textContent.trim()) {
-      daftarTeks = daftarTeks.filter((t) => t.id !== id);
-      el.remove();
-      if (teksTerpilih && teksTerpilih.id === id) teksTerpilih = null;
-    }
-  });
-
-  setTimeout(() => el.focus(), 0);
-  return layer;
-}
-
-function pilihTeks(layer) {
-  daftarTeks.forEach((t) => t.el.classList.remove("selected"));
-  teksTerpilih = layer;
-  if (layer) {
-    layer.el.classList.add("selected");
-    teksWarna.value = layer.color;
-    teksUkuran.value = layer.size;
+function cariKategori(teks) {
+  const rendah = teks.toLowerCase();
+  for (const [nama, data] of Object.entries(BANK_RESPON)) {
+    if (data.kata.some((k) => rendah.includes(k))) return nama;
   }
+  return null;
 }
 
-function pasangDragTeks(layer) {
-  let seret = false;
-  let mulaiX = 0;
-  let mulaiY = 0;
-  let awalLeft = 0;
-  let awalTop = 0;
+function buatBalasanBot(teks) {
+  if (POLA_SIAGA.test(teks)) {
+    return `Aku dengar kamu, dan aku serius pengin kamu tetap aman. ${HOTLINE_INFO}`;
+  }
+  const kategori = cariKategori(teks);
+  const kumpulan = kategori ? BANK_RESPON[kategori].balasan : RESPON_UMUM;
+  return kumpulan[Math.floor(Math.random() * kumpulan.length)];
+}
 
-  function mulaiSeret(e) {
-    if (layer.el.classList.contains("editing")) return;
+function addBubble({ text, mine, system, typing }) {
+  const row = document.createElement("div");
+  row.className = system ? "bubble-row system" : `bubble-row ${mine ? "user" : "app"}`;
+
+  if (system) {
+    const bubble = document.createElement("div");
+    bubble.className = "bubble bubble-system";
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    chatScroll.appendChild(row);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+    return row;
+  }
+
+  const avatar = document.createElement("span");
+  avatar.className = "avatar";
+  avatar.textContent = mine ? "Kamu" : "CH";
+  if (mine) avatar.style.fontSize = "8px";
+
+  const wrap = document.createElement("div");
+  wrap.className = "bubble-col";
+
+  const bubble = document.createElement("div");
+  bubble.className = `bubble ${mine ? "bubble-user" : "bubble-app"}${typing ? " bubble-typing" : ""}`;
+  if (typing) {
+    bubble.innerHTML = '<span class="typing-dots"><span>●</span><span>●</span><span>●</span></span>';
+  } else {
+    bubble.textContent = text;
+  }
+  wrap.appendChild(bubble);
+
+  row.appendChild(avatar);
+  row.appendChild(wrap);
+  chatScroll.appendChild(row);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+  return row;
+}
+
+function kirimPesan(pesanAwal) {
+  const text = (pesanAwal ?? chatInput.value).trim();
+  if (!text) return;
+
+  if (suggestRow) suggestRow.classList.add("hidden");
+  addBubble({ text, mine: true });
+  chatInput.value = "";
+  chatInput.style.height = "auto";
+  btnSend.disabled = true;
+
+  const baris = addBubble({ mine: false, typing: true });
+  const jedaBalasan = 500 + Math.random() * 700;
+  setTimeout(() => {
+    baris.remove();
+    addBubble({ text: buatBalasanBot(text), mine: false });
+    btnSend.disabled = false;
+  }, jedaBalasan);
+}
+
+btnSend.addEventListener("click", () => kirimPesan());
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
-    seret = true;
-    pilihTeks(layer);
-    const titik = e.touches ? e.touches[0] : e;
-    mulaiX = titik.clientX;
-    mulaiY = titik.clientY;
-    awalLeft = layer.xPersen;
-    awalTop = layer.yPersen;
-    layer.el.style.cursor = "grabbing";
+    kirimPesan();
   }
+});
+chatInput.addEventListener("input", () => {
+  chatInput.style.height = "auto";
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + "px";
+});
 
-  function saatSeret(e) {
-    if (!seret) return;
-    const titik = e.touches ? e.touches[0] : e;
-    const rect = canvasWrap.getBoundingClientRect();
-    const dxPersen = ((titik.clientX - mulaiX) / rect.width) * 100;
-    const dyPersen = ((titik.clientY - mulaiY) / rect.height) * 100;
-    layer.xPersen = Math.min(96, Math.max(0, awalLeft + dxPersen));
-    layer.yPersen = Math.min(96, Math.max(0, awalTop + dyPersen));
-    layer.el.style.left = `${layer.xPersen}%`;
-    layer.el.style.top = `${layer.yPersen}%`;
-  }
-
-  function selesaiSeret() {
-    seret = false;
-    layer.el.style.cursor = "grab";
-  }
-
-  layer.el.addEventListener("mousedown", mulaiSeret);
-  layer.el.addEventListener("touchstart", mulaiSeret, { passive: false });
-  window.addEventListener("mousemove", saatSeret);
-  window.addEventListener("touchmove", saatSeret, { passive: false });
-  window.addEventListener("mouseup", selesaiSeret);
-  window.addEventListener("touchend", selesaiSeret);
-
-  layer.el.addEventListener("dblclick", () => layer.el.focus());
-  layer.el.addEventListener("click", (e) => {
-    e.stopPropagation();
-    pilihTeks(layer);
+if (suggestRow) {
+  suggestRow.addEventListener("click", (e) => {
+    const chip = e.target.closest(".suggest-chip");
+    if (!chip) return;
+    kirimPesan(chip.dataset.msg);
   });
 }
-
-canvasWrap?.addEventListener("click", (e) => {
-  if (!gambarAsli) return;
-  if (e.target !== canvasWrap && e.target !== photoCanvas) return; // klik di teks ditangani sendiri
-  const rect = canvasWrap.getBoundingClientRect();
-  const xPersen = ((e.clientX - rect.left) / rect.width) * 100;
-  const yPersen = ((e.clientY - rect.top) / rect.height) * 100;
-  tambahTeksLayer(Math.min(90, xPersen), Math.min(90, yPersen));
-});
-
-btnTambahTeks?.addEventListener("click", () => tambahTeksLayer(20, 20));
-
-btnHapusTeks?.addEventListener("click", () => {
-  if (!teksTerpilih) {
-    showToast("Ketuk teksnya dulu untuk memilih.");
-    return;
-  }
-  teksTerpilih.el.remove();
-  daftarTeks = daftarTeks.filter((t) => t.id !== teksTerpilih.id);
-  teksTerpilih = null;
-});
-
-teksWarna?.addEventListener("input", () => {
-  if (!teksTerpilih) return;
-  teksTerpilih.color = teksWarna.value;
-  teksTerpilih.el.style.color = teksWarna.value;
-});
-
-teksUkuran?.addEventListener("input", () => {
-  if (!teksTerpilih) return;
-  teksTerpilih.size = Number(teksUkuran.value);
-  teksTerpilih.el.style.fontSize = `${teksUkuran.value}px`;
-});
-
-btnUnduhFoto?.addEventListener("click", () => {
-  if (!gambarAsli) return;
-  const hasil = document.createElement("canvas");
-  hasil.width = gambarAsli.naturalWidth;
-  hasil.height = gambarAsli.naturalHeight;
-  const ctx = hasil.getContext("2d");
-  ctx.drawImage(gambarAsli, 0, 0);
-
-  const skalaFont = gambarAsli.naturalWidth / canvasWrap.getBoundingClientRect().width;
-
-  daftarTeks.forEach((t) => {
-    const teks = t.el.textContent;
-    if (!teks.trim()) return;
-    const ukuranPx = t.size * skalaFont;
-    ctx.font = `700 ${ukuranPx}px Inter, sans-serif`;
-    ctx.fillStyle = t.color;
-    ctx.textBaseline = "top";
-    ctx.shadowColor = "rgba(0,0,0,0.35)";
-    ctx.shadowBlur = 4 * skalaFont;
-    ctx.shadowOffsetY = 1 * skalaFont;
-
-    const x = (t.xPersen / 100) * hasil.width;
-    const y = (t.yPersen / 100) * hasil.height;
-    const baris = teks.split("\n");
-    baris.forEach((baris1, i) => {
-      ctx.fillText(baris1, x, y + i * ukuranPx * 1.2);
-    });
-  });
-
-  hasil.toBlob((blob) => {
-    if (!blob) {
-      showToast("Gagal membuat file foto.");
-      return;
-    }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `catatan-hati-${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-    showToast("Foto tersimpan ke perangkatmu");
-  }, "image/png");
-});
 
 // ---------- TAB 3: TikTok ----------
 const btnTiktok = document.getElementById("btn-tiktok");
