@@ -11,12 +11,19 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // ---------- Helper: panggil Claude API dari server (tidak dibatasi browser) ----------
-async function askClaude(prompt, maxTokens = 600) {
+async function askClaude(messages, { maxTokens = 600, system } = {}) {
   if (!ANTHROPIC_API_KEY) {
     throw new Error(
       "ANTHROPIC_API_KEY belum diatur di environment variable server."
     );
   }
+  const body = {
+    model: MODEL,
+    max_tokens: maxTokens,
+    messages,
+  };
+  if (system) body.system = system;
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -24,11 +31,7 @@ async function askClaude(prompt, maxTokens = 600) {
       "x-api-key": ANTHROPIC_API_KEY,
       "anthropic-version": "2023-06-01",
     },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: prompt }],
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -56,7 +59,7 @@ app.post("/api/generate", async (req, res) => {
       : "";
     const prompt = `${instruksi} Temanya: ${kategori}.${konteks} Jangan gunakan markdown, jangan beri pembuka seperti "Berikut adalah". Langsung isinya saja.`;
 
-    const text = await askClaude(prompt, 400);
+    const text = await askClaude([{ role: "user", content: prompt }], { maxTokens: 400 });
     res.json({ text });
   } catch (err) {
     console.error(err);
@@ -64,16 +67,53 @@ app.post("/api/generate", async (req, res) => {
   }
 });
 
-// ---------- API: ruang curhat & motivasi (tak terbatas, tiap request baru) ----------
+// ---------- API: ruang curhat — teman ngobrol sekaligus bisa jawab pertanyaan apa pun ----------
+const CURHAT_SYSTEM_PROMPT = `Kamu adalah "CH", teman ngobrol di aplikasi Catatan Hati. Kamu berbahasa Indonesia yang hangat, natural, dan tidak kaku, seperti teman dekat lewat chat.
+
+Baca dulu maksud pesan pengguna, lalu sesuaikan gaya balasan:
+
+1. Kalau pengguna curhat / cerita masalah / mengungkapkan perasaan (sedih, capek, cemas, marah, bingung, dll):
+   - Tunjukkan kamu benar-benar memahami perasaannya (jangan menggurui, jangan meremehkan, jangan buru-buru kasih solusi kalau dia cuma butuh didengar).
+   - Beri respons yang personal dan relevan dengan cerita spesifiknya, bukan template motivasi generik.
+   - Kalau memang pas, tutup dengan satu kalimat penyemangat atau pertanyaan lanjutan yang membuka ruang untuk cerita lebih jauh.
+
+2. Kalau pengguna bertanya sesuatu (fakta, pengetahuan umum, minta saran praktis, minta dijelaskan sesuatu, minta bantuan menulis, dsb):
+   - Jawab pertanyaannya dengan jelas, akurat, dan membantu — seperti asisten yang cerdas dan enak diajak ngobrol.
+   - Jangan alihkan ke topik curhat kalau dia tidak sedang curhat. Tidak semua pesan adalah curhat.
+
+3. Kalau pesannya ringan/basa-basi (sapaan, obrolan santai), balas santai dan hangat, boleh sambil menawarkan untuk bantu apa saja.
+
+Gaya bahasa: percakapan natural, kalimat tidak terlalu panjang, tanpa format markdown (tanpa bintang, tanpa heading, tanpa numbering kecuali pengguna secara eksplisit minta daftar/langkah-langkah), maksimal 1 emoji jika memang pas — jangan berlebihan. Panjang balasan menyesuaikan kebutuhan: singkat untuk obrolan ringan, lebih panjang kalau pertanyaannya memang butuh penjelasan.
+
+Jika pesan menunjukkan tanda-tanda krisis serius (ingin menyakiti diri sendiri atau putus asa berat), prioritaskan keselamatan: tunjukkan empati, dan sisipkan ajakan lembut untuk berbicara dengan orang terdekat atau layanan bantuan profesional (misalnya layanan Sejiwa di 119 ext 8).`;
+
 app.post("/api/curhat", async (req, res) => {
   try {
-    const { message = "" } = req.body || {};
+    const { message = "", history = [] } = req.body || {};
     if (!message.trim()) {
       return res.status(400).json({ error: "Pesan tidak boleh kosong." });
     }
-    const prompt = `Kamu adalah teman yang hangat, suportif, dan bijak, sedang membalas curhatan seseorang lewat pesan singkat berbahasa Indonesia. Orang ini menulis:\n\n"${message.trim()}"\n\nBalas dengan:\n1. Satu-dua kalimat yang menunjukkan kamu benar-benar memahami perasaan/masalahnya (jangan menggurui, jangan meremehkan).\n2. Lalu satu pesan motivasi yang terasa personal dan relevan dengan masalah spesifik yang ia ceritakan (bukan motivasi generik).\nTotal maksimal 5 kalimat. Nada hangat, seperti teman dekat, bukan seperti buku motivasi. Jangan gunakan markdown atau emoji berlebihan (maksimal 1 emoji jika pas).\n\nJika pesan menunjukkan tanda-tanda krisis serius (ingin menyakiti diri sendiri atau putus asa berat), sisipkan juga ajakan lembut untuk berbicara dengan orang terdekat atau layanan bantuan profesional (misalnya layanan Sejiwa di 119 ext 8).`;
 
-    const reply = await askClaude(prompt, 500);
+    // Batasi riwayat yang dikirim balik supaya tidak membengkak (10 pesan terakhir)
+    const trimmedHistory = Array.isArray(history)
+      ? history
+          .filter(
+            (m) =>
+              m &&
+              (m.role === "user" || m.role === "assistant") &&
+              typeof m.content === "string" &&
+              m.content.trim()
+          )
+          .slice(-10)
+          .map((m) => ({ role: m.role, content: m.content.trim() }))
+      : [];
+
+    const messages = [...trimmedHistory, { role: "user", content: message.trim() }];
+
+    const reply = await askClaude(messages, {
+      maxTokens: 700,
+      system: CURHAT_SYSTEM_PROMPT,
+    });
     res.json({ reply });
   } catch (err) {
     console.error(err);
