@@ -137,8 +137,6 @@ document.getElementById("jenis-chips").addEventListener("click", (e) => {
   document.querySelectorAll("#jenis-chips .seg-btn").forEach((c) => c.classList.remove("active"));
   btn.classList.add("active");
   jenis = btn.dataset.val;
-  const untukField = document.getElementById("untuk-field");
-  if (untukField) untukField.classList.toggle("hidden", jenis !== "puisi");
 });
 
 const btnGenerate = document.getElementById("btn-generate");
