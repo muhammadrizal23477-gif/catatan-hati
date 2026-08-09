@@ -74,6 +74,11 @@
           <div class="sk-line w60"></div>
         </div>
 
+        <div class="empty-state" id="tulis-empty">
+          <span class="empty-emoji">🖋️</span>
+          <p>Pilih tema dan bentuk tulisan di atas, lalu ketuk "Tulis untukku" — hasilnya akan muncul di sini.</p>
+        </div>
+
         <div class="paper-card hidden" id="paper-card">
           <span class="quote-mark">&#8220;</span>
           <p class="paper-text" id="paper-text"></p>
@@ -95,23 +100,74 @@
       <section class="panel chat-wrap" id="panel-curhat">
         <div class="section-head chat-head">
           <span class="eyebrow">Ruang Aman</span>
-          <h2>Curhat &amp; Motivasi</h2>
+          <h2>Curhat &amp; Ngobrol</h2>
+          <p class="chat-subtitle">Cerita perasaanmu atau tanya apa saja — CH siap dengarkan dan bantu jawab.</p>
         </div>
         <div class="chat-scroll" id="chat-scroll">
           <div class="bubble-row app">
             <span class="avatar">CH</span>
-            <div class="bubble bubble-app">Ceritakan apa yang sedang kamu rasakan atau masalah yang sedang kamu hadapi. Aku akan coba dengarkan dan balas dengan kata-kata yang cocok untukmu.</div>
+            <div class="bubble bubble-app">Hai, aku CH 👋 Ceritakan apa yang sedang kamu rasakan, atau tanya apa saja yang ingin kamu tahu — aku akan coba dengarkan dan bantu sebisaku.</div>
+          </div>
+          <div class="suggest-row" id="suggest-row">
+            <button class="suggest-chip" data-msg="Aku lagi capek banget sama semua hal akhir-akhir ini.">Lagi capek banget 😮‍💨</button>
+            <button class="suggest-chip" data-msg="Aku butuh semangat buat lanjutin hari ini.">Butuh semangat</button>
+            <button class="suggest-chip" data-msg="Boleh minta saran cara mengelola waktu biar tidak gampang burnout?">Minta saran praktis</button>
+            <button class="suggest-chip" data-msg="Ceritain satu fakta menarik dong.">Kasih fakta menarik</button>
           </div>
         </div>
         <div class="chat-input-bar">
-          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Tulis apa yang kamu rasakan..."></textarea>
+          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Tulis apa yang kamu rasakan atau tanyakan..."></textarea>
           <button id="btn-send" class="send-btn" aria-label="Kirim">
             <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12l16-8-6 16-3-6-7-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
       </section>
 
-      <!-- TAB 3: TikTok -->
+      <!-- TAB 3: Jurnal Suasana Hati -->
+      <section class="panel" id="panel-jurnal">
+        <div class="section-head">
+          <span class="eyebrow">Refleksi Harian</span>
+          <h2>Jurnal Suasana Hati</h2>
+        </div>
+
+        <div class="field-row">
+          <label class="label">Bagaimana perasaanmu hari ini?</label>
+          <div class="mood-row" id="mood-row">
+            <button class="mood-btn" data-mood="senang" data-emoji="😄" title="Senang">😄</button>
+            <button class="mood-btn" data-mood="tenang" data-emoji="🙂" title="Tenang">🙂</button>
+            <button class="mood-btn" data-mood="biasa" data-emoji="😐" title="Biasa saja">😐</button>
+            <button class="mood-btn" data-mood="sedih" data-emoji="😔" title="Sedih">😔</button>
+            <button class="mood-btn" data-mood="lelah" data-emoji="😣" title="Lelah / berat">😣</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label class="label">Catatan <span class="optional">(opsional)</span></label>
+          <textarea id="jurnal-input" class="input jurnal-textarea" rows="3" placeholder="Ceritakan sedikit tentang hari ini..."></textarea>
+        </div>
+
+        <button id="btn-jurnal-simpan" class="primary-btn" disabled>
+          <span class="btn-label">Simpan ke jurnal</span>
+          <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+
+        <div class="jurnal-stats" id="jurnal-stats"></div>
+
+        <div class="field-row">
+          <div class="jurnal-list-head">
+            <label class="label">Riwayat</label>
+            <span class="jurnal-count" id="jurnal-count"></span>
+          </div>
+          <div class="jurnal-list" id="jurnal-list">
+            <div class="empty-state" id="jurnal-empty">
+              <span class="empty-emoji">📓</span>
+              <p>Belum ada catatan. Yuk mulai rekam perasaanmu hari ini — jurnal ini tersimpan aman di perangkatmu sendiri.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: TikTok -->
       <section class="panel" id="panel-tiktok">
         <div class="section-head">
           <span class="eyebrow">Unduh Video</span>
@@ -215,6 +271,12 @@
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20s-7-4.35-9.5-9C.8 7.2 3 3.5 7 3.5c2 0 3.7 1.2 5 3 1.3-1.8 3-3 5-3 4 0 6.2 3.7 4.5 7.5C19 15.65 12 20 12 20z" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
         <span class="nav-label">Curhat</span>
+      </button>
+      <button class="nav-btn" data-tab="jurnal">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s-6.5-4.35-9.5-9C.5 8 2.7 4 7 4c2.1 0 3.7 1.3 5 3.2C13.3 5.3 14.9 4 17 4c4.3 0 6.5 4 3.5 8-3 4.65-8.5 9-8.5 9z" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.5 12.5l1.8-2.2 1.7 1.4 2.5-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="nav-label">Jurnal</span>
       </button>
       <button class="nav-btn" data-tab="tiktok">
         <span class="nav-icon">
