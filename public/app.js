@@ -222,171 +222,235 @@ btnCopy.addEventListener("click", async () => {
   }
 });
 
-// ---------- TAB 2: Chat Publik (live, terhubung ke semua pengguna) ----------
-const chatScroll = document.getElementById("chat-scroll");
-const chatInput = document.getElementById("chat-input");
-const btnSend = document.getElementById("btn-send");
-const suggestRow = document.getElementById("suggest-row");
-const chatOnlineCount = document.getElementById("chat-online-count");
-const chatNamaLabel = document.getElementById("chat-nama-label");
-const btnGantiNama = document.getElementById("btn-ganti-nama");
+// ---------- TAB 2: Edit Foto (tulis teks di atas foto, seret seperti Markup iPhone) ----------
+const photoInput = document.getElementById("photo-input");
+const btnPilihFoto = document.getElementById("btn-pilih-foto");
+const btnGantiFoto = document.getElementById("btn-ganti-foto");
+const photoEmpty = document.getElementById("photo-empty");
+const photoEditor = document.getElementById("photo-editor");
+const canvasWrap = document.getElementById("canvas-wrap");
+const photoCanvas = document.getElementById("photo-canvas");
+const btnTambahTeks = document.getElementById("btn-tambah-teks");
+const btnHapusTeks = document.getElementById("btn-hapus-teks");
+const btnUnduhFoto = document.getElementById("btn-unduh-foto");
+const teksWarna = document.getElementById("teks-warna");
+const teksUkuran = document.getElementById("teks-ukuran");
 
-const NAMA_KEY = "catatan-hati:nama-chat";
-let namaSaya = localStorage.getItem(NAMA_KEY) || "";
+let gambarAsli = null; // objek Image() resolusi asli
+let daftarTeks = []; // { id, x, y (persen 0-100 relatif ke canvas tampilan), text, color, size, el }
+let teksTerpilih = null;
 
-function initialAvatar(nama) {
-  return (nama || "?").trim().slice(0, 2).toUpperCase();
+function bukaPemilihFoto() {
+  photoInput.value = "";
+  photoInput.click();
+}
+btnPilihFoto?.addEventListener("click", bukaPemilihFoto);
+btnGantiFoto?.addEventListener("click", bukaPemilihFoto);
+
+photoInput?.addEventListener("change", () => {
+  const file = photoInput.files && photoInput.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    gambarAsli = img;
+    daftarTeks = [];
+    teksTerpilih = null;
+    canvasWrap.querySelectorAll(".photo-text-layer").forEach((el) => el.remove());
+    gambarKeCanvas();
+    photoEmpty.classList.add("hidden");
+    photoEditor.classList.remove("hidden");
+    URL.revokeObjectURL(url);
+  };
+  img.onerror = () => {
+    showToast("Gagal membuka foto itu, coba foto lain ya.");
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+});
+
+function gambarKeCanvas() {
+  if (!gambarAsli) return;
+  photoCanvas.width = gambarAsli.naturalWidth;
+  photoCanvas.height = gambarAsli.naturalHeight;
+  const ctx = photoCanvas.getContext("2d");
+  ctx.clearRect(0, 0, photoCanvas.width, photoCanvas.height);
+  ctx.drawImage(gambarAsli, 0, 0);
 }
 
-function addBubble({ text, name, mine, system }) {
-  const row = document.createElement("div");
-  row.className = system ? "bubble-row system" : `bubble-row ${mine ? "user" : "app"}`;
+function tambahTeksLayer(xPersen, yPersen) {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const el = document.createElement("div");
+  el.className = "photo-text-layer";
+  el.contentEditable = "true";
+  el.style.left = `${xPersen}%`;
+  el.style.top = `${yPersen}%`;
+  el.style.color = teksWarna.value;
+  el.style.fontSize = `${teksUkuran.value}px`;
 
-  if (system) {
-    const bubble = document.createElement("div");
-    bubble.className = "bubble bubble-system";
-    bubble.textContent = text;
-    row.appendChild(bubble);
-    chatScroll.appendChild(row);
-    chatScroll.scrollTop = chatScroll.scrollHeight;
-    return row;
+  const layer = { id, xPersen, yPersen, color: teksWarna.value, size: Number(teksUkuran.value), el };
+  daftarTeks.push(layer);
+  canvasWrap.appendChild(el);
+  pilihTeks(layer);
+  pasangDragTeks(layer);
+
+  el.addEventListener("focus", () => {
+    el.classList.add("editing");
+    pilihTeks(layer);
+  });
+  el.addEventListener("blur", () => {
+    el.classList.remove("editing");
+    // Hapus otomatis kalau ditinggal kosong tanpa isi teks.
+    if (!el.textContent.trim()) {
+      daftarTeks = daftarTeks.filter((t) => t.id !== id);
+      el.remove();
+      if (teksTerpilih && teksTerpilih.id === id) teksTerpilih = null;
+    }
+  });
+
+  setTimeout(() => el.focus(), 0);
+  return layer;
+}
+
+function pilihTeks(layer) {
+  daftarTeks.forEach((t) => t.el.classList.remove("selected"));
+  teksTerpilih = layer;
+  if (layer) {
+    layer.el.classList.add("selected");
+    teksWarna.value = layer.color;
+    teksUkuran.value = layer.size;
+  }
+}
+
+function pasangDragTeks(layer) {
+  let seret = false;
+  let mulaiX = 0;
+  let mulaiY = 0;
+  let awalLeft = 0;
+  let awalTop = 0;
+
+  function mulaiSeret(e) {
+    if (layer.el.classList.contains("editing")) return;
+    e.preventDefault();
+    seret = true;
+    pilihTeks(layer);
+    const titik = e.touches ? e.touches[0] : e;
+    mulaiX = titik.clientX;
+    mulaiY = titik.clientY;
+    awalLeft = layer.xPersen;
+    awalTop = layer.yPersen;
+    layer.el.style.cursor = "grabbing";
   }
 
-  const avatar = document.createElement("span");
-  avatar.className = "avatar";
-  avatar.textContent = mine ? "Kamu" : initialAvatar(name);
-  if (mine) avatar.style.fontSize = "8px";
-
-  const wrap = document.createElement("div");
-  wrap.className = "bubble-col";
-
-  if (!mine && name) {
-    const label = document.createElement("span");
-    label.className = "bubble-name";
-    label.textContent = name;
-    wrap.appendChild(label);
+  function saatSeret(e) {
+    if (!seret) return;
+    const titik = e.touches ? e.touches[0] : e;
+    const rect = canvasWrap.getBoundingClientRect();
+    const dxPersen = ((titik.clientX - mulaiX) / rect.width) * 100;
+    const dyPersen = ((titik.clientY - mulaiY) / rect.height) * 100;
+    layer.xPersen = Math.min(96, Math.max(0, awalLeft + dxPersen));
+    layer.yPersen = Math.min(96, Math.max(0, awalTop + dyPersen));
+    layer.el.style.left = `${layer.xPersen}%`;
+    layer.el.style.top = `${layer.yPersen}%`;
   }
 
-  const bubble = document.createElement("div");
-  bubble.className = `bubble ${mine ? "bubble-user" : "bubble-app"}`;
-  bubble.textContent = text;
-  wrap.appendChild(bubble);
+  function selesaiSeret() {
+    seret = false;
+    layer.el.style.cursor = "grab";
+  }
 
-  row.appendChild(avatar);
-  row.appendChild(wrap);
-  chatScroll.appendChild(row);
-  chatScroll.scrollTop = chatScroll.scrollHeight;
-  return row;
+  layer.el.addEventListener("mousedown", mulaiSeret);
+  layer.el.addEventListener("touchstart", mulaiSeret, { passive: false });
+  window.addEventListener("mousemove", saatSeret);
+  window.addEventListener("touchmove", saatSeret, { passive: false });
+  window.addEventListener("mouseup", selesaiSeret);
+  window.addEventListener("touchend", selesaiSeret);
+
+  layer.el.addEventListener("dblclick", () => layer.el.focus());
+  layer.el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    pilihTeks(layer);
+  });
 }
 
-// ---------- Koneksi live via Socket.IO ----------
-const socket = typeof io === "function" ? io() : null;
+canvasWrap?.addEventListener("click", (e) => {
+  if (!gambarAsli) return;
+  if (e.target !== canvasWrap && e.target !== photoCanvas) return; // klik di teks ditangani sendiri
+  const rect = canvasWrap.getBoundingClientRect();
+  const xPersen = ((e.clientX - rect.left) / rect.width) * 100;
+  const yPersen = ((e.clientY - rect.top) / rect.height) * 100;
+  tambahTeksLayer(Math.min(90, xPersen), Math.min(90, yPersen));
+});
 
-if (socket) {
-  socket.on("connect", () => {
-    if (namaSaya) socket.emit("chat:set-name", namaSaya);
-  });
+btnTambahTeks?.addEventListener("click", () => tambahTeksLayer(20, 20));
 
-  socket.on("chat:whoami", ({ nickname }) => {
-    namaSaya = nickname;
-    localStorage.setItem(NAMA_KEY, nickname);
-    if (chatNamaLabel) chatNamaLabel.textContent = nickname;
-  });
-
-  socket.on("chat:online", (jumlah) => {
-    if (chatOnlineCount) chatOnlineCount.textContent = jumlah;
-  });
-
-  socket.on("chat:history", (pesanList) => {
-    (pesanList || []).forEach((p) => {
-      addBubble({ text: p.text, name: p.name, mine: p.senderId === socket.id });
-    });
-  });
-
-  socket.on("chat:message", (p) => {
-    if (suggestRow) suggestRow.classList.add("hidden");
-    addBubble({ text: p.text, name: p.name, mine: p.senderId === socket.id });
-  });
-
-  socket.on("chat:care", (p) => {
-    addBubble({ text: p.text, name: "CH", mine: false });
-  });
-
-  socket.on("connect_error", () => {
-    showToast("Koneksi chat publik terputus, mencoba menyambung lagi...");
-    if (btnSend) btnSend.disabled = true;
-  });
-
-  socket.on("disconnect", () => {
-    if (btnSend) btnSend.disabled = true;
-  });
-
-  socket.on("connect", () => {
-    if (btnSend) btnSend.disabled = false;
-  });
-} else {
-  // Library socket.io-client gagal dimuat (mis. server belum siap / offline).
-  if (btnSend) btnSend.disabled = true;
-  showToast("Gagal memuat chat publik, coba refresh halaman.");
-}
-
-function kirimChat(pesanAwal) {
-  const text = (pesanAwal ?? chatInput.value).trim();
-  if (!text) return;
-
-  // Kalau socket belum ada / belum tersambung, jangan diam-diam gagal —
-  // beri tahu pengguna & jangan hapus teks yang sudah diketik.
-  if (!socket || !socket.connected) {
-    showToast("Belum tersambung ke chat publik, coba lagi sebentar...");
+btnHapusTeks?.addEventListener("click", () => {
+  if (!teksTerpilih) {
+    showToast("Ketuk teksnya dulu untuk memilih.");
     return;
   }
+  teksTerpilih.el.remove();
+  daftarTeks = daftarTeks.filter((t) => t.id !== teksTerpilih.id);
+  teksTerpilih = null;
+});
 
-  chatInput.value = "";
-  chatInput.style.height = "auto";
+teksWarna?.addEventListener("input", () => {
+  if (!teksTerpilih) return;
+  teksTerpilih.color = teksWarna.value;
+  teksTerpilih.el.style.color = teksWarna.value;
+});
 
-  // Pakai acknowledgment dari server (dengan timeout) supaya kalau pesan
-  // gagal sampai (mis. koneksi putus di tengah jalan), pengguna tahu dan
-  // teksnya bisa dikembalikan ke kotak input, bukan hilang begitu saja.
-  socket
-    .timeout(5000)
-    .emit("chat:message", { text }, (err, response) => {
-      if (err || !response || response.ok === false) {
-        showToast("Pesan gagal terkirim, coba lagi ya.");
-        if (!chatInput.value) chatInput.value = text;
-      }
+teksUkuran?.addEventListener("input", () => {
+  if (!teksTerpilih) return;
+  teksTerpilih.size = Number(teksUkuran.value);
+  teksTerpilih.el.style.fontSize = `${teksUkuran.value}px`;
+});
+
+btnUnduhFoto?.addEventListener("click", () => {
+  if (!gambarAsli) return;
+  const hasil = document.createElement("canvas");
+  hasil.width = gambarAsli.naturalWidth;
+  hasil.height = gambarAsli.naturalHeight;
+  const ctx = hasil.getContext("2d");
+  ctx.drawImage(gambarAsli, 0, 0);
+
+  const skalaFont = gambarAsli.naturalWidth / canvasWrap.getBoundingClientRect().width;
+
+  daftarTeks.forEach((t) => {
+    const teks = t.el.textContent;
+    if (!teks.trim()) return;
+    const ukuranPx = t.size * skalaFont;
+    ctx.font = `700 ${ukuranPx}px Inter, sans-serif`;
+    ctx.fillStyle = t.color;
+    ctx.textBaseline = "top";
+    ctx.shadowColor = "rgba(0,0,0,0.35)";
+    ctx.shadowBlur = 4 * skalaFont;
+    ctx.shadowOffsetY = 1 * skalaFont;
+
+    const x = (t.xPersen / 100) * hasil.width;
+    const y = (t.yPersen / 100) * hasil.height;
+    const baris = teks.split("\n");
+    baris.forEach((baris1, i) => {
+      ctx.fillText(baris1, x, y + i * ukuranPx * 1.2);
     });
-}
-
-btnSend.addEventListener("click", () => kirimChat());
-chatInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    kirimChat();
-  }
-});
-chatInput.addEventListener("input", () => {
-  chatInput.style.height = "auto";
-  chatInput.style.height = Math.min(chatInput.scrollHeight, 100) + "px";
-});
-
-if (suggestRow) {
-  suggestRow.addEventListener("click", (e) => {
-    const chip = e.target.closest(".suggest-chip");
-    if (!chip) return;
-    kirimChat(chip.dataset.msg);
   });
-}
 
-if (btnGantiNama) {
-  btnGantiNama.addEventListener("click", () => {
-    const nama = window.prompt("Mau dipanggil siapa di Chat Publik?", namaSaya || "");
-    if (nama === null) return;
-    const bersih = nama.trim().slice(0, 24);
-    if (!bersih || !socket) return;
-    socket.emit("chat:set-name", bersih);
-    showToast("Nama diperbarui");
-  });
-}
+  hasil.toBlob((blob) => {
+    if (!blob) {
+      showToast("Gagal membuat file foto.");
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `catatan-hati-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showToast("Foto tersimpan ke perangkatmu");
+  }, "image/png");
+});
 
 // ---------- TAB 3: TikTok ----------
 const btnTiktok = document.getElementById("btn-tiktok");

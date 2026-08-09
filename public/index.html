@@ -144,37 +144,46 @@
         <audio id="tulis-music" src="/media/tulis-music.mp3" loop preload="none"></audio>
       </section>
 
-      <!-- TAB 2: Chat Publik -->
+      <!-- TAB 2: Edit Foto -->
       <section class="panel chat-wrap" id="panel-curhat">
         <div class="section-head chat-head">
-          <span class="eyebrow">Ruang Publik</span>
-          <h2>Chat Publik</h2>
-          <p class="chat-subtitle">Ngobrol langsung bareng semua pengguna Catatan Hati, live &amp; real-time. Jaga sopan santun ya 🙂</p>
+          <span class="eyebrow">Edit Foto</span>
+          <h2>Tulis di Atas Foto</h2>
+          <p class="chat-subtitle">Pilih foto, lalu ketuk di mana saja untuk menambahkan teks. Seret untuk memindahkan — seperti alat Markup di iPhone.</p>
         </div>
 
-        <div class="chat-namebar">
-          <span class="chat-online-badge"><span class="online-dot"></span><span id="chat-online-count">1</span> online</span>
-          <button id="btn-ganti-nama" class="chat-name-btn" type="button">
-            Nama: <span id="chat-nama-label">Tamu</span>
+        <input type="file" id="photo-input" accept="image/*" hidden />
+
+        <div class="photo-empty" id="photo-empty">
+          <button id="btn-pilih-foto" class="photo-pick-btn" type="button">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5.5-5.5L9 17" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Pilih Foto
           </button>
         </div>
 
-        <div class="chat-scroll" id="chat-scroll">
-          <div class="bubble-row system">
-            <div class="bubble bubble-system">Selamat datang di Chat Publik 👋 Semua pesan di sini terlihat oleh semua pengguna yang sedang online.</div>
+        <div class="photo-editor hidden" id="photo-editor">
+          <div class="photo-toolbar">
+            <button id="btn-tambah-teks" class="tool-btn" type="button" title="Tambah teks">Aa</button>
+            <input type="color" id="teks-warna" value="#ffffff" title="Warna teks" />
+            <input type="range" id="teks-ukuran" min="14" max="72" value="32" title="Ukuran teks" />
+            <button id="btn-hapus-teks" class="tool-btn" type="button" title="Hapus teks terpilih">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button id="btn-ganti-foto" class="tool-btn" type="button" title="Ganti foto">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4v6h6M20 20v-6h-6M4.5 15a8 8 0 0014.9 2M19.5 9A8 8 0 004.6 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
           </div>
-          <div class="suggest-row" id="suggest-row">
-            <button class="suggest-chip" data-msg="Halo semuanya! 👋">Sapa semuanya</button>
-            <button class="suggest-chip" data-msg="Lagi ngerasain apa nih hari ini?">Tanya kabar</button>
-            <button class="suggest-chip" data-msg="Ada yang mau saling semangatin?">Saling semangat</button>
-            <button class="suggest-chip" data-msg="Share satu hal kecil yang bikin bersyukur hari ini dong.">Share syukur</button>
+
+          <div class="canvas-wrap" id="canvas-wrap">
+            <canvas id="photo-canvas"></canvas>
           </div>
-        </div>
-        <div class="chat-input-bar">
-          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Tulis pesan untuk semua orang di sini..."></textarea>
-          <button id="btn-send" class="send-btn" aria-label="Kirim">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12l16-8-6 16-3-6-7-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
+
+          <div class="photo-download-bar">
+            <button id="btn-unduh-foto" class="primary-btn">
+              <span class="btn-label">Unduh Foto</span>
+              <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0l-5-5m5 5l5-5M4 20h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -325,9 +334,9 @@
       </button>
       <button class="nav-btn" data-tab="curhat">
         <span class="nav-icon">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20s-7-4.35-9.5-9C.8 7.2 3 3.5 7 3.5c2 0 3.7 1.2 5 3 1.3-1.8 3-3 5-3 4 0 6.2 3.7 4.5 7.5C19 15.65 12 20 12 20z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.4"/><path d="M21 16l-5.5-5.5L9 17" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </span>
-        <span class="nav-label">Chat Publik</span>
+        <span class="nav-label">Edit Foto</span>
       </button>
       <button class="nav-btn" data-tab="jurnal">
         <span class="nav-icon">
@@ -353,7 +362,6 @@
 
   <div class="toast" id="toast"></div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
