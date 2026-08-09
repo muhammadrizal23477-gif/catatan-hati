@@ -436,6 +436,7 @@ btnTiktok.addEventListener("click", async () => {
   const url = tiktokUrlInput.value.trim();
   tiktokError.textContent = "";
   tiktokResult.classList.add("hidden");
+  document.getElementById("tiktok-video")?.pause();
   if (!url) {
     tiktokError.textContent = "Tempel link video TikTok terlebih dahulu.";
     return;
@@ -447,7 +448,14 @@ btnTiktok.addEventListener("click", async () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Gagal mengambil video.");
 
-    document.getElementById("tiktok-cover").src = data.cover;
+    const videoEl = document.getElementById("tiktok-video");
+    videoEl.pause();
+    videoEl.removeAttribute("src");
+    videoEl.load();
+    if (data.cover) videoEl.poster = data.cover;
+    videoEl.src = data.playNoWatermark;
+    videoEl.load();
+
     document.getElementById("tiktok-title").textContent = data.title || "(tanpa judul)";
     document.getElementById("tiktok-author").textContent = data.author ? `@${data.author}` : "";
     const durEl = document.getElementById("tiktok-duration");
