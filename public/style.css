@@ -197,37 +197,35 @@ body {
 .optional { font-weight: 400; color: var(--muted-dim); font-size: 11px; }
 
 .chip-row {
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 2px;
-  margin: 0 -20px;
-  padding-left: 20px;
-  padding-right: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px;
 }
 
-.chip-row::-webkit-scrollbar { display: none; }
-
 .chip {
-  background: var(--surface-2);
+  background: var(--surface);
   color: var(--muted);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 7px 13px;
+  border-radius: 12px;
+  padding: 9px 10px;
   font-size: 12.5px;
   font-family: var(--font-body);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  flex: 0 0 auto;
+  text-align: center;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chip:hover { border-color: var(--gold); color: var(--text); }
+
+.chip-row .chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 .chip.active {
   background: linear-gradient(135deg, var(--gold), var(--gold-soft));
