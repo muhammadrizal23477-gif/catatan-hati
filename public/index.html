@@ -2,109 +2,237 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0D0F1F" />
 <title>Catatan Hati</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="spine"></div>
+  <div class="aurora" aria-hidden="true">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="orb orb-c"></span>
+  </div>
+
   <div class="shell">
-    <header class="header">
-      <div class="eyebrow">catatan malam</div>
-      <h1>Catatan Hati</h1>
-      <p class="sub">tempat menulis rasa, dan tempat rasa itu dijawab</p>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">CH</span>
+        <div class="brand-text">
+          <div class="brand-title">Catatan Hati</div>
+          <div class="brand-sub">tulis rasa, dapat balasan</div>
+        </div>
+      </div>
     </header>
 
-    <div class="body">
-      <nav class="tabs" id="tabs">
-        <button class="tab-btn active" data-tab="tulis">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 3c-6 0-14 4-16 14 3-1 6-2 8-4M20 3c0 6-4 14-14 16M20 3l-9 9" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Kata &amp; Puisi</span>
-        </button>
-        <button class="tab-btn" data-tab="curhat">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 20s-7-4.35-9.5-9C.8 7.2 3 3.5 7 3.5c2 0 3.7 1.2 5 3 1.3-1.8 3-3 5-3 4 0 6.2 3.7 4.5 7.5C19 15.65 12 20 12 20z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Ruang Curhat</span>
-        </button>
-        <button class="tab-btn" data-tab="tiktok">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v13m0 0l-5-5m5 5l5-5M4 20h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Unduh TikTok</span>
-        </button>
-      </nav>
+    <main class="main" id="main">
+      <!-- TAB 1: Kata & Puisi -->
+      <section class="panel active" id="panel-tulis">
+        <div class="section-head">
+          <span class="eyebrow">Ruang Menulis</span>
+          <h2>Kata &amp; Puisi</h2>
+        </div>
 
-      <main class="main">
-        <!-- TAB 1: Kata & Puisi -->
-        <section class="panel" id="panel-tulis">
-          <div class="field-row">
-            <label class="label">Tema</label>
-            <div class="chip-row" id="kategori-chips">
-              <button class="chip active" data-val="Motivasi">Motivasi</button>
-              <button class="chip" data-val="Cinta">Cinta</button>
-              <button class="chip" data-val="Sedih">Sedih</button>
-              <button class="chip" data-val="Rindu">Rindu</button>
-              <button class="chip" data-val="Perjuangan">Perjuangan</button>
-              <button class="chip" data-val="Masalah Hidup">Masalah Hidup</button>
-              <button class="chip" data-val="Syukur">Syukur</button>
+        <div class="field-row">
+          <label class="label">Pilih tema</label>
+          <div class="chip-row" id="kategori-chips">
+            <button class="chip active" data-val="Motivasi">Motivasi</button>
+            <button class="chip" data-val="Cinta">Cinta</button>
+            <button class="chip" data-val="Sedih">Sedih</button>
+            <button class="chip" data-val="Rindu">Rindu</button>
+            <button class="chip" data-val="Perjuangan">Perjuangan</button>
+            <button class="chip" data-val="Masalah Hidup">Masalah Hidup</button>
+            <button class="chip" data-val="Syukur">Syukur</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label class="label">Bentuk tulisan</label>
+          <div class="segmented" id="jenis-chips">
+            <button class="seg-btn active" data-val="kata">Kata-kata</button>
+            <button class="seg-btn" data-val="puisi">Puisi</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label class="label">Detail <span class="optional">(opsional)</span></label>
+          <input id="topik-input" class="input" placeholder="mis. tentang menyerah, tentang hujan, tentang ibu..." />
+        </div>
+
+        <button id="btn-generate" class="primary-btn">
+          <span class="btn-label">Tulis untukku</span>
+          <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="error" id="tulis-error"></p>
+
+        <div class="paper-card skeleton hidden" id="paper-skeleton">
+          <div class="sk-line w80"></div>
+          <div class="sk-line w95"></div>
+          <div class="sk-line w60"></div>
+        </div>
+
+        <div class="paper-card hidden" id="paper-card">
+          <span class="quote-mark">&#8220;</span>
+          <p class="paper-text" id="paper-text"></p>
+          <div class="paper-footer">
+            <span id="paper-footer-label"></span>
+            <div class="paper-actions">
+              <button class="icon-btn" id="btn-copy" title="Salin">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+              </button>
+              <button class="icon-btn" id="btn-regen" title="Buat lagi">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round"/><path d="M4.5 15a8 8 0 0 0 14-3M19.5 9a8 8 0 0 0-14 3" stroke-linecap="round"/></svg>
+              </button>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div class="field-row">
-            <label class="label">Bentuk</label>
-            <div class="chip-row" id="jenis-chips">
-              <button class="chip active" data-val="kata">Kata-kata singkat</button>
-              <button class="chip" data-val="puisi">Puisi</button>
-            </div>
-          </div>
-
-          <div class="field-row">
-            <label class="label">Detail (opsional)</label>
-            <input id="topik-input" class="input" placeholder="mis. tentang menyerah, tentang hujan, tentang ibu..." />
-          </div>
-
-          <button id="btn-generate" class="primary-btn">Tulis untukku</button>
-          <p class="error" id="tulis-error"></p>
-          <div class="paper-card hidden" id="paper-card">
-            <p class="paper-text" id="paper-text"></p>
-            <div class="paper-footer" id="paper-footer"></div>
-          </div>
-        </section>
-
-        <!-- TAB 2: Ruang Curhat -->
-        <section class="panel chat-wrap hidden" id="panel-curhat">
-          <div class="chat-scroll" id="chat-scroll">
+      <!-- TAB 2: Ruang Curhat -->
+      <section class="panel chat-wrap" id="panel-curhat">
+        <div class="section-head chat-head">
+          <span class="eyebrow">Ruang Aman</span>
+          <h2>Curhat &amp; Motivasi</h2>
+        </div>
+        <div class="chat-scroll" id="chat-scroll">
+          <div class="bubble-row app">
+            <span class="avatar">CH</span>
             <div class="bubble bubble-app">Ceritakan apa yang sedang kamu rasakan atau masalah yang sedang kamu hadapi. Aku akan coba dengarkan dan balas dengan kata-kata yang cocok untukmu.</div>
           </div>
-          <div class="chat-input-row">
-            <textarea id="chat-input" class="chat-input" rows="1" placeholder="Tulis apa yang kamu rasakan..."></textarea>
-            <button id="btn-send" class="send-btn" aria-label="Kirim">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12l16-8-6 16-3-6-7-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-          </div>
-        </section>
+        </div>
+        <div class="chat-input-bar">
+          <textarea id="chat-input" class="chat-input" rows="1" placeholder="Tulis apa yang kamu rasakan..."></textarea>
+          <button id="btn-send" class="send-btn" aria-label="Kirim">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12l16-8-6 16-3-6-7-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </section>
 
-        <!-- TAB 3: TikTok -->
-        <section class="panel hidden" id="panel-tiktok">
-          <div class="tiktok-card">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#E8A845" stroke-width="1.6"><path d="M12 3v13m0 0l-5-5m5 5l5-5M4 20h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <h3>Unduh video TikTok</h3>
-            <input id="tiktok-url" class="input" placeholder="Tempel link video TikTok di sini" />
-            <button id="btn-tiktok" class="primary-btn">Cari video</button>
-            <p class="error" id="tiktok-error"></p>
+      <!-- TAB 3: TikTok -->
+      <section class="panel" id="panel-tiktok">
+        <div class="section-head">
+          <span class="eyebrow">Unduh Video</span>
+          <h2>TikTok Tanpa Watermark</h2>
+        </div>
 
-            <div class="tiktok-result hidden" id="tiktok-result">
-              <img id="tiktok-cover" alt="Cover video" />
-              <div class="tiktok-info">
-                <div class="tiktok-title" id="tiktok-title"></div>
-                <div class="tiktok-author" id="tiktok-author"></div>
-                <a id="tiktok-download" class="primary-btn download-link" download>Unduh tanpa watermark</a>
-              </div>
+        <div class="tiktok-card">
+          <div class="field-row">
+            <label class="label">Tautan video</label>
+            <div class="input-with-btn">
+              <input id="tiktok-url" class="input" placeholder="Tempel link TikTok di sini" />
+              <button id="btn-paste" class="ghost-btn" title="Tempel dari clipboard">Tempel</button>
             </div>
           </div>
-        </section>
-      </main>
-    </div>
+          <button id="btn-tiktok" class="primary-btn">
+            <span class="btn-label">Cari video</span>
+            <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+          </button>
+          <p class="error" id="tiktok-error"></p>
+
+          <div class="tiktok-result skeleton hidden" id="tiktok-skeleton">
+            <div class="sk-thumb"></div>
+            <div class="tiktok-info">
+              <div class="sk-line w95"></div>
+              <div class="sk-line w60"></div>
+              <div class="sk-line w40" style="height:34px;border-radius:9px;"></div>
+            </div>
+          </div>
+
+          <div class="tiktok-result hidden" id="tiktok-result">
+            <div class="thumb-wrap">
+              <img id="tiktok-cover" alt="Cover video" />
+              <span class="play-overlay">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </span>
+              <span class="duration-badge" id="tiktok-duration"></span>
+            </div>
+            <div class="tiktok-info">
+              <div class="tiktok-title" id="tiktok-title"></div>
+              <div class="tiktok-author" id="tiktok-author"></div>
+              <a id="tiktok-download" class="primary-btn download-link" download>
+                <span class="btn-label">Unduh video</span>
+                <svg class="btn-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0l-5-5m5 5l5-5M4 20h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <p class="fine-print">Video diproses lewat server — tautan yang diunduh sudah tanpa watermark TikTok.</p>
+      </section>
+
+      <!-- TAB 4: Profil Developer -->
+      <section class="panel" id="panel-profil">
+        <div class="section-head">
+          <span class="eyebrow">Tentang Aplikasi</span>
+          <h2>Profil Developer</h2>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-top">
+            <div class="profile-avatar">MRF</div>
+            <div class="profile-id">
+              <div class="profile-name">Muhamad Rizal Febiansyah</div>
+              <div class="profile-role">Developer &amp; Pembuat Catatan Hati</div>
+              <div class="profile-age-badge">16 tahun</div>
+            </div>
+          </div>
+
+          <div class="profile-divider"></div>
+
+          <div class="profile-block">
+            <span class="profile-label">Alasan pengembangan</span>
+            <p class="profile-text">Aplikasi ini lahir dari masalah yang terus-menerus datang silih berganti, hingga muncul obsesi untuk mengubah rasa itu menjadi sesuatu yang bisa membantu orang lain juga — lewat kata-kata, puisi, dan ruang untuk didengar.</p>
+          </div>
+
+          <a
+            id="btn-contact-dev"
+            class="whatsapp-btn"
+            href="https://wa.me/6285965940576?text=Halo%20Rizal%2C%20saya%20menghubungi%20lewat%20aplikasi%20Catatan%20Hati"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0 0 12.05 4a8.94 8.94 0 0 0-7.75 13.4L3 21l3.7-1.28A8.9 8.9 0 0 0 12.05 21 8.94 8.94 0 0 0 21 12.05a8.87 8.87 0 0 0-3.4-5.73Zm-5.55 13.1a7.4 7.4 0 0 1-3.78-1.04l-.27-.16-2.53.87.84-2.47-.18-.28a7.44 7.44 0 1 1 13.83-3.86 7.45 7.45 0 0 1-7.9 6.94Zm4.07-5.56c-.22-.11-1.32-.65-1.53-.73-.2-.08-.35-.11-.5.11-.15.22-.57.73-.7.88-.13.15-.26.16-.48.05-.22-.11-.94-.35-1.79-1.11-.66-.59-1.11-1.32-1.24-1.54-.13-.22-.01-.34.1-.45.1-.1.22-.26.33-.39.11-.13.15-.22.22-.37.07-.15.04-.28-.02-.39-.06-.11-.5-1.21-.69-1.66-.18-.43-.37-.37-.5-.38-.13-.01-.28-.01-.43-.01-.15 0-.39.06-.6.28-.2.22-.79.77-.79 1.87s.81 2.17.92 2.32c.11.15 1.6 2.44 3.87 3.42.54.23.96.37 1.29.48.54.17 1.03.15 1.42.09.43-.06 1.32-.54 1.51-1.06.19-.52.19-.96.13-1.06-.06-.1-.2-.15-.42-.26Z"/></svg>
+            <span>Hubungi Developer via WhatsApp</span>
+          </a>
+
+          <p class="profile-footnote">Ketuk tombol di atas untuk langsung membuka percakapan WhatsApp dengan developer.</p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" id="tabs">
+      <button class="nav-btn active" data-tab="tulis">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 3c-6 0-14 4-16 14 3-1 6-2 8-4M20 3c0 6-4 14-14 16M20 3l-9 9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="nav-label">Menulis</span>
+      </button>
+      <button class="nav-btn" data-tab="curhat">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20s-7-4.35-9.5-9C.8 7.2 3 3.5 7 3.5c2 0 3.7 1.2 5 3 1.3-1.8 3-3 5-3 4 0 6.2 3.7 4.5 7.5C19 15.65 12 20 12 20z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="nav-label">Curhat</span>
+      </button>
+      <button class="nav-btn" data-tab="tiktok">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v13m0 0l-5-5m5 5l5-5M4 20h16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="nav-label">TikTok</span>
+      </button>
+      <button class="nav-btn" data-tab="profil">
+        <span class="nav-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.3-5.5 7.5-5.5s6.1 1.9 7.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span class="nav-label">Profil</span>
+      </button>
+      <span class="nav-indicator" id="nav-indicator"></span>
+    </nav>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <script src="/app.js"></script>
 </body>
