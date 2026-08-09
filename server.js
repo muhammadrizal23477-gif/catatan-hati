@@ -1,9 +1,13 @@
 const express = require("express");
 const path = require("path");
 const { Readable } = require("stream");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const httpServer = http.createServer(app);
+const io = new Server(httpServer);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -198,39 +202,195 @@ const FRASA_KATA = {
   },
 };
 
-const PUISI = {
-  Motivasi: [
-    "Langkah kecil hari ini,\nadalah jejak menuju esok yang lebih terang.\nTak perlu berlari,\ncukup jangan berhenti berjalan.",
-    "Ketika lelah mendekap erat,\ningatlah kenapa kau memulai.\nSetiap luka yang kau rawat,\nakan menjadi kekuatan di hari nanti.",
-    "Badai boleh datang malam ini,\ntapi fajar tetap punya janji.\nBertahanlah sedikit lagi,\nsebab kamu lebih kuat dari yang kau kira.",
-  ],
-  Cinta: [
-    "Kau hadir seperti senja,\npelan namun mengubah seluruh warna langit.\nDan aku, yang dulu ragu,\nkini belajar percaya pada rasa ini.",
-    "Cinta bukan tentang siapa yang paling sempurna,\ntapi siapa yang mau tetap tinggal saat semua tak sempurna.\nDan aku memilih tetap di sini,\nbersamamu, apa adanya.",
-  ],
-  Sedih: [
-    "Malam ini hujan turun di dalam dada,\ntanpa suara, tanpa siapa yang tahu.\nTapi biarkan saja ia jatuh,\nsebab esok pagi akan datang jua.",
-    "Ada luka yang tak terlihat mata,\nhanya terasa saat sunyi tiba.\nPelan-pelan, izinkan dirimu berduka,\nsebelum kembali berjalan seperti semula.",
-  ],
-  Rindu: [
-    "Kutulis rindu ini di antara detik yang sepi,\nberharap angin menyampaikannya kepadamu.\nJika kau rasakan hangat tiba-tiba,\nitu aku, yang sedang merindu.",
-    "Jarak hanya angka,\ntapi rindu tak pernah tahu cara berhenti.\nAku menunggu waktu mempertemukan kita lagi,\ndi ruang dan saat yang tepat.",
-  ],
-  Perjuangan: [
-    "Di jalan yang terjal ini,\nkubawa langkah yang kadang goyah.\nTapi kubawa juga tekad,\nyang tak pernah benar-benar padam.",
-    "Peluh ini bukan tanda lemah,\nia bukti aku sedang berjuang.\nSuatu hari nanti akan kupetik,\nbuah dari semua yang kutanam.",
-  ],
-  "Masalah Hidup": [
-    "Badai ini terasa panjang,\ntapi tak ada badai yang abadi.\nSetelah gelap yang menekan,\nakan ada terang yang menanti.",
-    "Kupikul beban ini sendiri,\ntapi aku percaya ada ujung dari semua ini.\nSatu langkah, satu hari,\naku akan sampai juga di sana.",
-  ],
-  Syukur: [
-    "Kubuka mata pagi ini,\ndan itu sudah cukup untuk berterima kasih.\nSebab tak semua orang seberuntung ini,\nmasih diberi satu hari lagi untuk mencoba.",
-    "Di antara semua yang belum tercapai,\nada banyak hal kecil yang patut disyukuri.\nNapas, langkah, dan hari yang baru,\nadalah hadiah yang sering terlewat begitu saja.",
-  ],
+// Bait puisi (masing-masing 2 baris) — 10 pembuka x 10 penutup per kategori,
+// menghasilkan 100 puisi 4-baris yang unik dan tetap mengalir secara makna.
+const BAIT_PUISI = {
+  Motivasi: {
+    pembuka: [
+      "Langkah kecil hari ini,\nadalah jejak menuju esok yang lebih terang.",
+      "Ketika lelah mendekap erat,\ningatlah kenapa kau memulai.",
+      "Badai boleh datang malam ini,\ntapi fajar tetap punya janji.",
+      "Jangan takut berjalan pelan,\nasal kau tak pernah berhenti.",
+      "Setiap keringat yang jatuh hari ini,\nsedang menulis kisah tentang siapa kau nanti.",
+      "Kegagalan bukan tanda untuk menyerah,\nia hanya bagian dari peta menuju arah.",
+      "Waktu tak pernah salah membawa,\nsemua yang kau tanam pada masanya akan tiba.",
+      "Ada hari yang terasa berat sekali,\ntapi kau tetap memilih untuk berdiri lagi.",
+      "Mimpi besar dimulai dari niat kecil,\nyang dijaga meski dunia terasa sulit.",
+      "Bukan seberapa cepat kau berlari,\ntapi seberapa kuat kau bertahan hari demi hari.",
+    ],
+    penutup: [
+      "Tak perlu berlari,\ncukup jangan berhenti berjalan.",
+      "Setiap luka yang kau rawat,\nakan menjadi kekuatan di hari nanti.",
+      "Bertahanlah sedikit lagi,\nsebab kamu lebih kuat dari yang kau kira.",
+      "Sebab yang penting bukan secepat apa,\ntapi seteguh apa kau menjaga arah.",
+      "Suatu hari nanti kau akan mengerti,\nkenapa semua perjuangan ini berarti.",
+      "Teruslah melangkah meski gelap terasa panjang,\nsebab fajar tak pernah lupa datang.",
+      "Percayalah pada proses yang sedang kau jalani,\nsebab hasil terbaik butuh waktu untuk terjadi.",
+      "Kau tidak sendirian dalam perjuangan ini,\nsemesta sedang menyusun jalanmu sendiri.",
+      "Jangan bandingkan langkahmu dengan orang lain,\nsebab setiap orang punya waktu yang berlainan.",
+      "Simpan saja niat itu baik-baik,\nsebab ia akan membawamu ke tempat yang layak.",
+    ],
+  },
+  Cinta: {
+    pembuka: [
+      "Kau hadir seperti senja,\npelan namun mengubah seluruh warna langit.",
+      "Cinta bukan tentang siapa yang paling sempurna,\ntapi siapa yang mau tetap tinggal saat semua tak sempurna.",
+      "Rasa ini tumbuh tanpa terburu,\ndari hal-hal kecil yang kau lakukan untukku.",
+      "Kau bukan alasan aku bahagia,\ntapi kau membuat bahagia terasa lebih nyata.",
+      "Tidak semua cinta harus diributkan,\nada yang cukup dijaga dalam diam dan kesetiaan.",
+      "Di antara banyak orang yang datang dan pergi,\nkau yang memilih untuk tetap menemani.",
+      "Cinta yang tenang tidak selalu terlihat mewah,\ntapi terasa hangat dan membuat pulang jadi mudah.",
+      "Kau mengajarkanku arti menerima,\nbukan hanya mencintai yang sempurna saja.",
+      "Bersamamu waktu terasa lebih pelan,\nseakan dunia memberi ruang untuk kita berdua bertahan.",
+      "Aku belajar mencintai tanpa syarat,\nsejak kau menerimaku apa adanya, tanpa berat.",
+    ],
+    penutup: [
+      "Dan aku, yang dulu ragu,\nkini belajar percaya pada rasa ini.",
+      "Dan aku memilih tetap di sini,\nbersamamu, apa adanya.",
+      "Dan aku bahagia menyaksikannya,\ntumbuh perlahan menjadi cinta yang nyata.",
+      "Dan itu sudah lebih dari cukup,\nuntuk membuatku ingin terus menyambut.",
+      "Sebab cinta yang bertahan,\nbukan yang paling ramai, tapi yang paling tulus dan tenang.",
+      "Dan aku bersyukur menjadi tempat singgahmu,\nsampai kapan pun waktu mengizinkanku.",
+      "Sebab bersamamu, aku merasa cukup,\ntanpa perlu mencari yang lain untuk kutuju.",
+      "Dan aku ingin terus belajar bersamamu,\nmenata cinta ini, hari demi waktu.",
+      "Semoga waktu selalu mengizinkan,\nkita berdua tetap saling menguatkan.",
+      "Dan untuk itu aku berterima kasih,\npada semesta, karena telah mempertemukan kita berdua di sini.",
+    ],
+  },
+  Sedih: {
+    pembuka: [
+      "Malam ini hujan turun di dalam dada,\ntanpa suara, tanpa siapa yang tahu.",
+      "Ada luka yang tak terlihat mata,\nhanya terasa saat sunyi tiba.",
+      "Kadang aku hanya ingin diam sejenak,\nmembiarkan air mata jatuh tanpa harus dijelaskan.",
+      "Sedih ini datang tanpa permisi,\nmerampas sedikit demi sedikit energi hari ini.",
+      "Aku lelah berpura-pura baik-baik saja,\npadahal di dalam hati sedang runtuh perlahan.",
+      "Tidak semua yang terlihat tenang,\nsedang benar-benar baik-baik saja di dalam.",
+      "Hatiku sedang berat malam ini,\nmembawa cerita yang belum sempat kuutarakan sendiri.",
+      "Aku menangis bukan karena lemah,\ntapi karena aku sudah menahan terlalu lama.",
+      "Ruang ini sunyi, sesunyi hatiku,\nyang sedang mencoba memahami apa yang sedang terjadi padaku.",
+      "Kadang aku hanya butuh didengar,\nbukan dinasihati, hanya ditemani sebentar saja.",
+    ],
+    penutup: [
+      "Tapi biarkan saja ia jatuh,\nsebab esok pagi akan datang jua.",
+      "Pelan-pelan, izinkan dirimu berduka,\nsebelum kembali berjalan seperti semula.",
+      "Sebab air mata juga cara hati bicara,\ntentang apa yang tak sanggup diucap kata-kata.",
+      "Dan itu tidak apa-apa,\nsebab kamu berhak merasakannya tanpa terburu sembuh.",
+      "Suatu hari nanti akan terasa ringan,\nasal kau beri waktu, pelan-pelan.",
+      "Sebab tidak semua luka harus segera pulih,\nada yang butuh waktu untuk benar-benar sembuh.",
+      "Dan besok, meski masih terasa berat,\ntetap akan ada langkah baru yang bisa diperbuat.",
+      "Kamu tidak harus kuat setiap saat,\ncukup jujur pada dirimu sendiri, itu sudah tepat.",
+      "Sebab badai ini pun akan reda,\nmeninggalkan langit yang kembali cerah seperti sedia.",
+      "Dan aku percaya, meski pelan,\nkamu akan menemukan caramu sendiri untuk bertahan.",
+    ],
+  },
+  Rindu: {
+    pembuka: [
+      "Kutulis rindu ini di antara detik yang sepi,\nberharap angin menyampaikannya kepadamu.",
+      "Jarak hanya angka,\ntapi rindu tak pernah tahu cara berhenti.",
+      "Setiap sudut yang pernah kita singgahi,\nmasih menyimpan jejak yang belum sempat kulupakan sendiri.",
+      "Rindu ini datang di waktu yang tak terduga,\nmembuatku berhenti sejenak di tengah harinya.",
+      "Aku menatap langit yang sama denganmu,\nberharap jarak ini tak benar-benar memisahkan kita berdua.",
+      "Kadang aku hanya ingin mendengar suaramu,\nsekadar melepas rindu yang menumpuk begitu lama.",
+      "Waktu berjalan tanpa menungguku,\ntapi rindu ini selalu setia mengikutiku.",
+      "Aku menyimpan rindu ini rapi-rapi,\nsampai tiba saatnya kita bertemu lagi.",
+      "Setiap malam aku bertanya pada bintang,\nkapan rindu ini bisa berubah jadi pelukan yang panjang.",
+      "Rindu ini bukan tentang keluhan,\ntapi tentang betapa berartinya kau dalam kehidupan.",
+    ],
+    penutup: [
+      "Jika kau rasakan hangat tiba-tiba,\nitu aku, yang sedang merindu.",
+      "Aku menunggu waktu mempertemukan kita lagi,\ndi ruang dan saat yang tepat.",
+      "Sebab rindu yang tulus akan selalu menemukan jalan,\nuntuk sampai walau harus menunggu lebih lama.",
+      "Dan rindu ini kusimpan sebagai alasan,\nuntuk terus melangkah menuju pertemuan.",
+      "Meski jarak memisahkan raga kita,\nhati ini tetap saling menyapa.",
+      "Sebab rindu sejati tidak pernah memaksa,\nia hanya menunggu dengan sabar dan percaya.",
+      "Dan aku percaya, waktu akan mempertemukan,\nkita berdua, pada saat yang telah ditentukan.",
+      "Sampai saat itu tiba, kusimpan rindu ini,\nsebagai bukti betapa berartinya dirimu bagi hati ini.",
+      "Semoga bintang menyampaikan pesan ini untukku,\nbahwa aku merindukanmu lebih dari yang kau tahu.",
+      "Dan aku akan terus menunggu dengan sabar,\nsampai rindu ini berubah menjadi pertemuan yang benar.",
+    ],
+  },
+  Perjuangan: {
+    pembuka: [
+      "Di jalan yang terjal ini,\nkubawa langkah yang kadang goyah.",
+      "Peluh ini bukan tanda lemah,\nia bukti aku sedang berjuang.",
+      "Setiap kali aku ingin menyerah,\nkuingat lagi alasan kenapa aku memulai.",
+      "Jalan ini tidak selalu mulus,\ntapi aku memilih untuk terus melangkah tanpa putus.",
+      "Aku jatuh berkali-kali di jalan ini,\ntapi setiap kali itu juga aku belajar bangkit sendiri.",
+      "Perjuangan ini sunyi, tak banyak yang tahu,\ntapi aku percaya semua usaha punya waktunya untuk berlaku.",
+      "Tidak ada yang bertepuk tangan untuk perjuanganku,\ntapi aku tetap melangkah dengan caraku sendiri.",
+      "Setiap luka dalam perjalanan ini,\nmengajarkan aku arti bertahan sampai nanti.",
+      "Aku memilih untuk terus mencoba,\nmeski hasilnya belum terlihat nyata.",
+      "Dalam lelah yang datang silih berganti,\naku tetap memilih untuk berdiri lagi.",
+    ],
+    penutup: [
+      "Tapi kubawa juga tekad,\nyang tak pernah benar-benar padam.",
+      "Suatu hari nanti akan kupetik,\nbuah dari semua yang kutanam.",
+      "Sebab perjuangan yang sungguh-sungguh,\ntidak akan pernah benar-benar sia-sia dan luruh.",
+      "Dan aku percaya, jalan ini akan sampai,\npada tujuan yang selama ini kunantikan sendiri.",
+      "Sebab bangkit lagi setelah jatuh,\nadalah keberanian yang tidak semua orang tahu.",
+      "Dan aku yakin, semesta sedang mencatat,\nsetiap usaha yang kulakukan dengan penuh semangat.",
+      "Sebab perjuangan yang sunyi pun tetap berarti,\ndan hasilnya akan terasa pada waktunya nanti.",
+      "Dan luka itu menjadi kekuatan baru,\nyang membawaku semakin dekat pada tujuanku.",
+      "Sebab hasil bukan satu-satunya ukuran,\nprosesnya sendiri sudah menjadi kebanggaan.",
+      "Dan aku percaya pada diriku sendiri,\nbahwa aku akan sampai, cepat atau lambat nanti.",
+    ],
+  },
+  "Masalah Hidup": {
+    pembuka: [
+      "Badai ini terasa panjang,\ntapi tak ada badai yang abadi.",
+      "Kupikul beban ini sendiri,\ntapi aku percaya ada ujung dari semua ini.",
+      "Hidup memang tidak selalu berjalan sesuai rencana,\ntapi aku belajar menerima dan terus mencoba lagi.",
+      "Masalah datang silih berganti,\ntapi aku percaya semua ada hikmah di dalamnya nanti.",
+      "Kadang aku merasa sendirian menghadapi ini,\ntapi aku tahu ada yang selalu mendoakan dari hati.",
+      "Ujian ini terasa berat sekarang,\ntapi aku percaya aku akan melewatinya perlahan.",
+      "Tidak semua masalah bisa langsung selesai hari ini,\ntapi aku memilih untuk terus mencoba mencari jalan keluar sendiri.",
+      "Aku pernah merasa dunia terasa berat sekali,\ntapi aku tetap memilih untuk bertahan sampai nanti.",
+      "Setiap masalah mengajarkanku sesuatu yang baru,\ntentang seberapa kuat sebenarnya diriku.",
+      "Kadang jalan keluar tidak langsung terlihat,\ntapi aku percaya semua akan indah pada waktunya kelak.",
+    ],
+    penutup: [
+      "Setelah gelap yang menekan,\nakan ada terang yang menanti.",
+      "Satu langkah, satu hari,\naku akan sampai juga di sana.",
+      "Sebab setiap masalah punya waktunya untuk selesai,\ndan aku percaya waktuku akan tiba juga nantinya.",
+      "Dan aku percaya, semua ini bukan tanpa arti,\nia sedang membentukku menjadi lebih kuat lagi.",
+      "Sebab aku tidak sendirian memikul ini,\nada yang selalu menyertai langkahku setiap hari.",
+      "Dan perlahan aku akan menemukan jalan keluarnya,\nselama aku tidak berhenti mencoba dan percaya.",
+      "Sebab tak ada ujian yang diberikan tanpa alasan,\nselalu ada pelajaran di balik setiap perjalanan.",
+      "Dan aku percaya matahari akan terbit lagi,\nsetelah malam paling gelap yang pernah kulewati.",
+      "Sebab masalah ini pun akan berlalu,\nmeninggalkan aku yang lebih kuat dari sebelumnya.",
+      "Dan aku akan terus melangkah dengan yakin,\nbahwa semua ini akan berakhir baik pada akhirnya nanti.",
+    ],
+  },
+  Syukur: {
+    pembuka: [
+      "Kubuka mata pagi ini,\ndan itu sudah cukup untuk berterima kasih.",
+      "Di antara semua yang belum tercapai,\nada banyak hal kecil yang patut disyukuri.",
+      "Bersyukur bukan berarti hidup selalu sempurna,\ntapi memilih melihat kebaikan di tengah segala kekurangan.",
+      "Setiap napas yang kuhirup hari ini,\nadalah hadiah yang tak semua orang bisa rasakan lagi.",
+      "Aku belajar bersyukur dari hal-hal kecil,\nyang dulu sering kulewatkan begitu saja tanpa disadari.",
+      "Tidak semua orang seberuntung ini,\nmasih diberi kesempatan untuk mencoba lagi hari ini.",
+      "Ada kebahagiaan kecil di setiap harinya,\nyang layak untuk disyukuri dan dirayakan sepenuhnya.",
+      "Rasa cukup bukan datang dari banyaknya yang dimiliki,\ntapi dari hati yang mampu bersyukur setiap hari.",
+      "Aku bersyukur atas setiap langkah yang sudah kutempuh,\nmeski jalannya tidak selalu mudah dan mulus.",
+      "Pagi ini aku memilih untuk berhenti sejenak,\nmenghitung berkah yang selama ini terlewat begitu banyak.",
+    ],
+    penutup: [
+      "Sebab tak semua orang seberuntung ini,\nmasih diberi satu hari lagi untuk mencoba.",
+      "Napas, langkah, dan hari yang baru,\nadalah hadiah yang sering terlewat begitu saja.",
+      "Dan aku belajar bahwa cukup itu,\ndatang dari hati yang mau bersyukur, bukan dari harta.",
+      "Sebab kebahagiaan sejati bukan soal memiliki banyak,\ntapi soal mampu bersyukur atas yang ada meski sedikit.",
+      "Dan aku memilih terus bersyukur setiap hari,\natas semua yang telah dan akan terjadi nanti.",
+      "Sebab hidup ini penuh berkah yang sering terlewat,\ntinggal bagaimana aku mau melihatnya dengan tepat.",
+      "Dan rasa syukur ini membuatku lebih tenang,\nmenjalani hidup meski penuh tantangan.",
+      "Sebab setiap hal kecil yang kusyukuri hari ini,\nmenjadi alasan untuk tersenyum lebih sering lagi.",
+      "Dan aku percaya, semakin aku bersyukur,\nsemakin banyak kebaikan yang akan mengalir.",
+      "Sebab syukur adalah kunci hati yang tenang,\ndi tengah dunia yang kadang terasa berat dan menantang.",
+    ],
+  },
 };
 
-// Bangun 100 kombinasi kata-kata unik per kategori (10 pembuka x 10 penutup)
+// Bangun 100 kombinasi kata-kata & 100 puisi unik per kategori
+// (10 pembuka x 10 penutup masing-masing).
 const KONTEN = {};
 for (const kategori of Object.keys(FRASA_KATA)) {
   const { pembuka, penutup } = FRASA_KATA[kategori];
@@ -240,7 +400,18 @@ for (const kategori of Object.keys(FRASA_KATA)) {
       kata.push(`${p}, ${t}`);
     }
   }
-  KONTEN[kategori] = { kata, puisi: PUISI[kategori] };
+
+  const baitPuisi = BAIT_PUISI[kategori];
+  const puisi = [];
+  if (baitPuisi) {
+    for (const p of baitPuisi.pembuka) {
+      for (const t of baitPuisi.penutup) {
+        puisi.push(`${p}\n${t}`);
+      }
+    }
+  }
+
+  KONTEN[kategori] = { kata, puisi };
 }
 
 function pilihAcak(arr) {
@@ -256,86 +427,92 @@ app.post("/api/generate", (req, res) => {
 });
 
 // =========================================================================
-// RUANG CURHAT — balasan berbasis aturan sederhana, tidak butuh AI eksternal
+// CHAT PUBLIK — ruang obrolan live yang terhubung ke semua pengguna
+// lewat Socket.IO (broadcast real-time, tanpa AI eksternal)
 // =========================================================================
 const HOTLINE_INFO =
   "Kalau rasanya berat sekali, kamu tidak sendirian — coba hubungi layanan Sejiwa di 119 ext 8, atau ceritakan ke orang terdekat yang kamu percaya.";
 
-const POLA_CURHAT = [
-  {
-    cocok: /(bunuh diri|mengakhiri hidup|nyakitin diri|melukai diri|self ?harm|ingin mati)/i,
-    balas: () =>
-      `Aku dengar kamu, dan aku serius pengin kamu tetap aman. Perasaan seberat ini penting untuk dibagikan ke orang yang bisa bantu langsung. ${HOTLINE_INFO}`,
-  },
-  {
-    cocok: /(capek|lelah|cape|burnout|penat)/i,
-    balas: () =>
-      pilihAcak([
-        "Capek yang kamu rasain itu valid banget. Kadang tubuh dan pikiran memang butuh jeda sebelum lanjut lagi. Mau cerita apa yang paling bikin capek belakangan ini?",
-        "Wajar kok kalau lagi lelah, apalagi kalau sudah dipendam lama. Boleh cerita lebih lanjut, aku dengerin.",
-      ]),
-  },
-  {
-    cocok: /(sedih|nangis|kecewa|hancur|patah hati|galau)/i,
-    balas: () =>
-      pilihAcak([
-        "Kedengarannya berat ya yang kamu rasain sekarang. Nggak apa-apa buat sedih dulu, aku di sini nemenin ceritamu.",
-        "Aku ikut merasakan beratnya. Kalau kamu mau cerita lebih detail apa yang terjadi, aku siap dengerin.",
-      ]),
-  },
-  {
-    cocok: /(semangat|motivasi|males|malas|gak niat|nggak niat)/i,
-    balas: () =>
-      pilihAcak([
-        "Kadang semangat memang naik-turun, itu manusiawi kok. Coba mulai dari langkah paling kecil dulu — pelan-pelan aja, nggak harus langsung besar.",
-        "Susah ya cari semangat kalau lagi drop. Coba istirahat sebentar, lalu mulai lagi dari satu hal kecil yang paling mudah dulu.",
-      ]),
-  },
-  {
-    cocok: /(cemas|khawatir|takut|panik|anxiety|gugup)/i,
-    balas: () =>
-      "Perasaan cemas itu memang tidak nyaman, tapi kamu tidak salah karena merasakannya. Coba tarik napas pelan-pelan, dan kalau nyaman, ceritain apa yang lagi bikin kamu khawatir.",
-  },
-  {
-    cocok: /^(hai|halo|hi|hey|pagi|siang|sore|malam)\b/i,
-    balas: () =>
-      pilihAcak([
-        "Hai juga! Gimana harimu sejauh ini?",
-        "Halo! Senang kamu mampir. Ada yang mau diceritain atau ditanyain?",
-      ]),
-  },
-  {
-    cocok: /(makasih|terima kasih|thanks|thank you)/i,
-    balas: () => "Sama-sama. Aku senang bisa nemenin, jangan ragu cerita lagi kapan pun.",
-  },
-];
+const POLA_SIAGA = /(bunuh diri|mengakhiri hidup|nyakitin diri|melukai diri|self ?harm|ingin mati)/i;
 
-function balasCurhatLokal(pesan) {
-  const teks = pesan.trim();
-  for (const pola of POLA_CURHAT) {
-    if (pola.cocok.test(teks)) return pola.balas();
-  }
+const MAX_RIWAYAT = 60;
+const riwayatChat = []; // buffer pesan publik terbaru, dibagikan ke user yang baru bergabung
+const penggunaOnline = new Map(); // socket.id -> nickname
 
-  // Deteksi pertanyaan umum — beri jawaban jujur bahwa mode ini sederhana (tanpa AI)
-  if (/\?\s*$/.test(teks) || /^(apa|kenapa|gimana|bagaimana|berapa|siapa|dimana|di mana|kapan)\b/i.test(teks)) {
-    return "Pertanyaanmu menarik, tapi mode Curhat di sini jalan tanpa koneksi ke AI eksternal jadi aku belum bisa jawab pertanyaan umum dengan akurat. Kalau mau cerita perasaan atau keluh kesah, aku tetap siap dengerin ya.";
-  }
-
-  return pilihAcak([
-    "Aku dengerin ceritamu. Boleh lanjutkan, apa yang lagi kamu rasain?",
-    "Terima kasih sudah mau cerita. Ceritain lebih lanjut, aku di sini kok.",
-    "Aku di sini nemenin kamu. Ada lagi yang mau dibagikan?",
-  ]);
+function namaTamuAcak() {
+  return `Tamu${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
-app.post("/api/curhat", (req, res) => {
-  const { message = "" } = req.body || {};
-  if (!message.trim()) {
-    return res.status(400).json({ error: "Pesan tidak boleh kosong." });
-  }
-  const reply = balasCurhatLokal(message);
-  res.json({ reply });
-});
+function sanitizeNama(nama) {
+  const bersih = String(nama || "")
+    .replace(/[<>]/g, "")
+    .trim()
+    .slice(0, 24);
+  return bersih || namaTamuAcak();
+}
+
+function sanitizePesan(pesan) {
+  return String(pesan || "").trim().slice(0, 500);
+}
+
+function siarkanJumlahOnline(io) {
+  io.emit("chat:online", penggunaOnline.size);
+}
+
+function pasangChatPublik(io) {
+  io.on("connection", (socket) => {
+    let nickname = namaTamuAcak();
+    penggunaOnline.set(socket.id, nickname);
+
+    // Kirim riwayat pesan terbaru & jumlah online ke user yang baru masuk
+    socket.emit("chat:history", riwayatChat);
+    socket.emit("chat:whoami", { nickname });
+    siarkanJumlahOnline(io);
+
+    socket.on("chat:set-name", (namaBaru) => {
+      nickname = sanitizeNama(namaBaru);
+      penggunaOnline.set(socket.id, nickname);
+      socket.emit("chat:whoami", { nickname });
+    });
+
+    socket.on("chat:message", (payload, ack) => {
+      const teks = sanitizePesan(payload && payload.text);
+      if (!teks) {
+        if (typeof ack === "function") ack({ ok: false, error: "Pesan kosong." });
+        return;
+      }
+
+      const pesan = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        senderId: socket.id,
+        name: nickname,
+        text: teks,
+        time: Date.now(),
+      };
+      riwayatChat.push(pesan);
+      if (riwayatChat.length > MAX_RIWAYAT) riwayatChat.shift();
+
+      io.emit("chat:message", pesan);
+
+      // Beri tahu pengirim bahwa pesannya sudah berhasil diproses & disiarkan,
+      // supaya UI di client bisa tahu jika ternyata gagal (mis. koneksi putus).
+      if (typeof ack === "function") ack({ ok: true, id: pesan.id });
+
+      // Jika pesan mengandung indikasi bahaya, kirim info bantuan
+      // secara privat ke pengirim saja (tidak disiarkan ke publik).
+      if (POLA_SIAGA.test(teks)) {
+        socket.emit("chat:care", {
+          text: `Aku dengar kamu, dan aku serius pengin kamu tetap aman. ${HOTLINE_INFO}`,
+        });
+      }
+    });
+
+    socket.on("disconnect", () => {
+      penggunaOnline.delete(socket.id);
+      siarkanJumlahOnline(io);
+    });
+  });
+}
 
 // =========================================================================
 // TIKTOK — unduh video tanpa watermark (tidak butuh API key)
@@ -444,6 +621,8 @@ app.get("/api/tiktok/download", async (req, res) => {
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
-app.listen(PORT, () => {
+pasangChatPublik(io);
+
+httpServer.listen(PORT, () => {
   console.log(`Catatan Hati berjalan di port ${PORT}`);
 });
