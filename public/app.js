@@ -141,14 +141,32 @@ document.getElementById("jenis-chips").addEventListener("click", (e) => {
 
 const btnGenerate = document.getElementById("btn-generate");
 const tulisError = document.getElementById("tulis-error");
+const paperOverlay = document.getElementById("paper-overlay");
 const paperCard = document.getElementById("paper-card");
 const paperSkeleton = document.getElementById("paper-skeleton");
 const paperText = document.getElementById("paper-text");
 const paperFooterLabel = document.getElementById("paper-footer-label");
 const btnCopy = document.getElementById("btn-copy");
 const btnRegen = document.getElementById("btn-regen");
+const btnPaperClose = document.getElementById("btn-paper-close");
 
 const tulisEmpty = document.getElementById("tulis-empty");
+
+function bukaPaperOverlay() {
+  paperOverlay.classList.remove("hidden");
+  document.body.classList.add("no-scroll");
+}
+
+function tutupPaperOverlay() {
+  paperOverlay.classList.add("hidden");
+  document.body.classList.remove("no-scroll");
+  stopTulisMusic();
+}
+
+btnPaperClose?.addEventListener("click", tutupPaperOverlay);
+paperOverlay?.addEventListener("click", (e) => {
+  if (e.target === paperOverlay) tutupPaperOverlay();
+});
 
 // ---------- Musik latar untuk hasil tulisan ----------
 const tulisMusic = document.getElementById("tulis-music");
@@ -175,10 +193,13 @@ btnMuteMusic?.addEventListener("click", () => {
   }
 });
 
-// Hentikan musik saat pindah ke tab lain
+// Hentikan musik & tutup popup saat pindah ke tab lain
 navButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
-    if (btn.dataset.tab !== "tulis") stopTulisMusic();
+    if (btn.dataset.tab !== "tulis") {
+      stopTulisMusic();
+      tutupPaperOverlay();
+    }
   });
 });
 
@@ -188,7 +209,6 @@ async function generateTulisan() {
   tulisError.textContent = "";
   btnGenerate.disabled = true;
   if (tulisEmpty) tulisEmpty.classList.add("hidden");
-  paperCard.classList.add("hidden");
   paperSkeleton.classList.remove("hidden");
   try {
     const res = await fetch("/api/generate", {
@@ -201,7 +221,7 @@ async function generateTulisan() {
     paperText.textContent = data.text;
     paperFooterLabel.textContent = kategori;
     paperSkeleton.classList.add("hidden");
-    paperCard.classList.remove("hidden");
+    bukaPaperOverlay();
     playTulisMusic();
   } catch (err) {
     paperSkeleton.classList.add("hidden");

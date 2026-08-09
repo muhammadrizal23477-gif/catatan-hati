@@ -127,25 +127,6 @@
           <span class="empty-emoji">🖋️</span>
           <p>Pilih tema dan bentuk tulisan di atas, lalu ketuk "Tulis untukku" — hasilnya akan muncul di sini.</p>
         </div>
-
-        <div class="paper-card hidden" id="paper-card">
-          <span class="quote-mark">&#8220;</span>
-          <p class="paper-text" id="paper-text"></p>
-          <div class="paper-footer">
-            <span id="paper-footer-label"></span>
-            <div class="paper-actions">
-              <button class="icon-btn" id="btn-mute-music" title="Bisukan musik">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M19 5a10 10 0 0 1 0 14M15.5 8.5a5 5 0 0 1 0 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <button class="icon-btn" id="btn-copy" title="Salin">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-              </button>
-              <button class="icon-btn" id="btn-regen" title="Buat lagi">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round"/><path d="M4.5 15a8 8 0 0 0 14-3M19.5 9a8 8 0 0 0-14 3" stroke-linecap="round"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
         <audio id="tulis-music" src="/media/tulis-music.mp3" loop preload="none"></audio>
       </section>
 
@@ -344,6 +325,30 @@
       </button>
       <span class="nav-indicator" id="nav-indicator"></span>
     </nav>
+  </div>
+
+  <div class="paper-overlay hidden" id="paper-overlay">
+    <div class="paper-card" id="paper-card">
+      <button class="paper-close" id="btn-paper-close" title="Tutup" aria-label="Tutup">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18" stroke-linecap="round"/></svg>
+      </button>
+      <span class="quote-mark">&#8220;</span>
+      <p class="paper-text" id="paper-text"></p>
+      <div class="paper-footer">
+        <span id="paper-footer-label"></span>
+        <div class="paper-actions">
+          <button class="icon-btn" id="btn-mute-music" title="Bisukan musik">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M19 5a10 10 0 0 1 0 14M15.5 8.5a5 5 0 0 1 0 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-copy" title="Salin">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+          <button class="icon-btn" id="btn-regen" title="Buat lagi">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4v5h5M20 20v-5h-5" stroke-linecap="round"/><path d="M4.5 15a8 8 0 0 0 14-3M19.5 9a8 8 0 0 0-14 3" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>

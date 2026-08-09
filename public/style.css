@@ -340,22 +340,67 @@ body {
   min-height: 0;
 }
 
-/* ---------- Quote / paper card ---------- */
+/* ---------- Quote / paper card (popup mengambang) ---------- */
+.paper-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(8,7,18,0.55);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  animation: overlay-in 0.28s ease;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .paper-card {
   position: relative;
+  width: 100%;
+  max-width: 380px;
+  max-height: 82vh;
+  overflow-y: auto;
   background: var(--paper);
   color: var(--paper-ink);
-  border-radius: 16px;
-  padding: 26px 22px 18px;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.15);
+  border-radius: 18px;
+  padding: 30px 22px 18px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 4px 14px rgba(0,0,0,0.25);
   background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(36,31,26,0.05) 28px);
-  animation: card-in 0.4s cubic-bezier(0.16,1,0.3,1);
+  animation: card-in 0.38s cubic-bezier(0.16,1,0.3,1);
+}
+
+.paper-skeleton.hidden { display: none; }
+#paper-skeleton.paper-card {
+  position: relative;
+  max-width: none;
+  box-shadow: none;
+  animation: none;
 }
 
 @keyframes card-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  from { opacity: 0; transform: translateY(16px) scale(0.94); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+.paper-close {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(36,27,18,0.08);
+  color: #6B5540;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.paper-close:hover { background: rgba(36,27,18,0.16); }
 
 .quote-mark {
   position: absolute;
@@ -887,6 +932,7 @@ body {
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 .hidden { display: none !important; }
+body.no-scroll { overflow: hidden; }
 
 @media (max-width: 360px) {
   .nav-label { font-size: 9px; }
