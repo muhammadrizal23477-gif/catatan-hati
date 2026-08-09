@@ -137,6 +137,8 @@ document.getElementById("jenis-chips").addEventListener("click", (e) => {
   document.querySelectorAll("#jenis-chips .seg-btn").forEach((c) => c.classList.remove("active"));
   btn.classList.add("active");
   jenis = btn.dataset.val;
+  const untukField = document.getElementById("untuk-field");
+  if (untukField) untukField.classList.toggle("hidden", jenis !== "puisi");
 });
 
 const btnGenerate = document.getElementById("btn-generate");
@@ -184,6 +186,7 @@ navButtons.forEach((btn) => {
 
 async function generateTulisan() {
   const topik = document.getElementById("topik-input").value;
+  const untuk = document.getElementById("untuk-input")?.value || "";
   tulisError.textContent = "";
   btnGenerate.disabled = true;
   if (tulisEmpty) tulisEmpty.classList.add("hidden");
@@ -193,7 +196,7 @@ async function generateTulisan() {
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kategori, jenis, topik }),
+      body: JSON.stringify({ kategori, jenis, topik, untuk }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Gagal membuat tulisan.");
