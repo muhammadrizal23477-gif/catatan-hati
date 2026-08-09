@@ -5,6 +5,8 @@
   const entryVideo = document.getElementById("entry-video");
   const entryAudio = document.getElementById("entry-audio");
   const btnMasuk = document.getElementById("btn-masuk");
+  const btnEntryAudio = document.getElementById("btn-entry-audio");
+  const entryAudioLabel = document.getElementById("entry-audio-label");
 
   // Sembunyikan konten inti aplikasi sampai user menekan "Masuk ke Aplikasi"
   shell.classList.add("hidden");
@@ -13,19 +15,46 @@
     entryVideo.play().catch(() => {});
   }
 
+  function perbaruiTombolAudio() {
+    if (!btnEntryAudio || !entryAudio) return;
+    const sedangMain = !entryAudio.paused;
+    btnEntryAudio.classList.toggle("playing", sedangMain);
+    if (entryAudioLabel) {
+      entryAudioLabel.textContent = sedangMain ? "Musik sedang diputar" : "Putar musik pembuka";
+    }
+  }
+
   // Coba putar musik pembuka otomatis. Kalau browser memblokir autoplay
   // bersuara, mainkan begitu ada interaksi pertama dari pengguna.
   if (entryAudio) {
     const cobaPutarAudio = () => entryAudio.play().catch(() => {});
     cobaPutarAudio();
-    const putarSaatInteraksi = () => {
+    const putarSaatInteraksi = (e) => {
+      // Kalau interaksi pertama justru di tombol audio, biarkan handler
+      // tombol di bawah yang menangani, supaya tidak saling menimpa.
+      if (e.target.closest && e.target.closest("#btn-entry-audio")) return;
       cobaPutarAudio();
-      document.removeEventListener("click", putarSaatInteraksi);
-      document.removeEventListener("touchstart", putarSaatInteraksi);
+      document.removeEventListener("click", putarSaatInteraksi, { capture: true });
+      document.removeEventListener("touchstart", putarSaatInteraksi, { capture: true });
     };
     document.addEventListener("click", putarSaatInteraksi, { once: true, capture: true });
     document.addEventListener("touchstart", putarSaatInteraksi, { once: true, capture: true });
+
+    entryAudio.addEventListener("play", perbaruiTombolAudio);
+    entryAudio.addEventListener("pause", perbaruiTombolAudio);
+    perbaruiTombolAudio();
   }
+
+  // Tombol manual: nyalakan/matikan musik pembuka kapan saja
+  btnEntryAudio?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!entryAudio) return;
+    if (entryAudio.paused) {
+      entryAudio.play().catch(() => {});
+    } else {
+      entryAudio.pause();
+    }
+  });
 
   btnMasuk?.addEventListener("click", () => {
     entryScreen.classList.add("entry-hidden");
