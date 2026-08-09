@@ -1,13 +1,9 @@
 const express = require("express");
 const path = require("path");
 const { Readable } = require("stream");
-const http = require("http");
-const { Server } = require("socket.io");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const httpServer = http.createServer(app);
-const io = new Server(httpServer);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -418,94 +414,28 @@ function pilihAcak(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function formatNama(nama) {
+  return String(nama)
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((kata) => kata.charAt(0).toUpperCase() + kata.slice(1))
+    .join(" ");
+}
+
 app.post("/api/generate", (req, res) => {
-  const { kategori = "Motivasi", jenis = "kata" } = req.body || {};
+  const { kategori = "Motivasi", jenis = "kata", untuk = "" } = req.body || {};
   const grup = KONTEN[kategori] || KONTEN.Motivasi;
   const daftar = grup[jenis] || grup.kata;
-  const text = pilihAcak(daftar);
+  let text = pilihAcak(daftar);
+
+  const namaTujuan = formatNama(untuk);
+  if (namaTujuan) {
+    text = `${namaTujuan},\n${text}`;
+  }
+
   res.json({ text });
 });
-
-// =========================================================================
-// CHAT PUBLIK — ruang obrolan live yang terhubung ke semua pengguna
-// lewat Socket.IO (broadcast real-time, tanpa AI eksternal)
-// =========================================================================
-const HOTLINE_INFO =
-  "Kalau rasanya berat sekali, kamu tidak sendirian — coba hubungi layanan Sejiwa di 119 ext 8, atau ceritakan ke orang terdekat yang kamu percaya.";
-
-const POLA_SIAGA = /(bunuh diri|mengakhiri hidup|nyakitin diri|melukai diri|self ?harm|ingin mati)/i;
-
-const MAX_RIWAYAT = 60;
-const riwayatChat = []; // buffer pesan publik terbaru, dibagikan ke user yang baru bergabung
-const penggunaOnline = new Map(); // socket.id -> nickname
-
-function namaTamuAcak() {
-  return `Tamu${Math.floor(1000 + Math.random() * 9000)}`;
-}
-
-function sanitizeNama(nama) {
-  const bersih = String(nama || "")
-    .replace(/[<>]/g, "")
-    .trim()
-    .slice(0, 24);
-  return bersih || namaTamuAcak();
-}
-
-function sanitizePesan(pesan) {
-  return String(pesan || "").trim().slice(0, 500);
-}
-
-function siarkanJumlahOnline(io) {
-  io.emit("chat:online", penggunaOnline.size);
-}
-
-function pasangChatPublik(io) {
-  io.on("connection", (socket) => {
-    let nickname = namaTamuAcak();
-    penggunaOnline.set(socket.id, nickname);
-
-    // Kirim riwayat pesan terbaru & jumlah online ke user yang baru masuk
-    socket.emit("chat:history", riwayatChat);
-    socket.emit("chat:whoami", { nickname });
-    siarkanJumlahOnline(io);
-
-    socket.on("chat:set-name", (namaBaru) => {
-      nickname = sanitizeNama(namaBaru);
-      penggunaOnline.set(socket.id, nickname);
-      socket.emit("chat:whoami", { nickname });
-    });
-
-    socket.on("chat:message", (payload) => {
-      const teks = sanitizePesan(payload && payload.text);
-      if (!teks) return;
-
-      const pesan = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        senderId: socket.id,
-        name: nickname,
-        text: teks,
-        time: Date.now(),
-      };
-      riwayatChat.push(pesan);
-      if (riwayatChat.length > MAX_RIWAYAT) riwayatChat.shift();
-
-      io.emit("chat:message", pesan);
-
-      // Jika pesan mengandung indikasi bahaya, kirim info bantuan
-      // secara privat ke pengirim saja (tidak disiarkan ke publik).
-      if (POLA_SIAGA.test(teks)) {
-        socket.emit("chat:care", {
-          text: `Aku dengar kamu, dan aku serius pengin kamu tetap aman. ${HOTLINE_INFO}`,
-        });
-      }
-    });
-
-    socket.on("disconnect", () => {
-      penggunaOnline.delete(socket.id);
-      siarkanJumlahOnline(io);
-    });
-  });
-}
 
 // =========================================================================
 // TIKTOK — unduh video tanpa watermark (tidak butuh API key)
@@ -614,8 +544,6 @@ app.get("/api/tiktok/download", async (req, res) => {
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
-pasangChatPublik(io);
-
-httpServer.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Catatan Hati berjalan di port ${PORT}`);
 });
