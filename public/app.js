@@ -1,3 +1,39 @@
+// ---------- Entry Screen ----------
+(() => {
+  const entryScreen = document.getElementById("entry-screen");
+  const shell = document.getElementById("shell");
+  const entryVideo = document.getElementById("entry-video");
+  const entryAudio = document.getElementById("entry-audio");
+  const soundBtn = document.getElementById("entry-sound-btn");
+  const btnMasuk = document.getElementById("btn-masuk");
+
+  // Sembunyikan konten inti aplikasi sampai user menekan "Masuk ke Aplikasi"
+  shell.classList.add("hidden");
+
+  if (entryVideo) {
+    entryVideo.play().catch(() => {});
+  }
+
+  soundBtn?.addEventListener("click", () => {
+    entryVideo.muted = !entryVideo.muted;
+    soundBtn.classList.toggle("unmuted", !entryVideo.muted);
+  });
+
+  btnMasuk?.addEventListener("click", () => {
+    entryScreen.classList.add("entry-hidden");
+    shell.classList.remove("hidden");
+
+    // Hentikan video & audio pembuka begitu masuk ke aplikasi
+    entryVideo?.pause();
+    entryAudio?.pause();
+
+    // Lepas dari DOM flow setelah animasi selesai
+    setTimeout(() => {
+      entryScreen.style.display = "none";
+    }, 500);
+  });
+})();
+
 // ---------- Toast kecil ----------
 const toastEl = document.getElementById("toast");
 let toastTimer;
@@ -59,6 +95,38 @@ const btnRegen = document.getElementById("btn-regen");
 
 const tulisEmpty = document.getElementById("tulis-empty");
 
+// ---------- Musik latar untuk hasil tulisan ----------
+const tulisMusic = document.getElementById("tulis-music");
+const btnMuteMusic = document.getElementById("btn-mute-music");
+let musicMuted = false;
+
+function playTulisMusic() {
+  if (!tulisMusic || musicMuted) return;
+  tulisMusic.currentTime = 0;
+  tulisMusic.play().catch(() => {});
+}
+
+function stopTulisMusic() {
+  tulisMusic?.pause();
+}
+
+btnMuteMusic?.addEventListener("click", () => {
+  musicMuted = !musicMuted;
+  btnMuteMusic.classList.toggle("active", musicMuted);
+  if (musicMuted) {
+    stopTulisMusic();
+  } else {
+    playTulisMusic();
+  }
+});
+
+// Hentikan musik saat pindah ke tab lain
+navButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.tab !== "tulis") stopTulisMusic();
+  });
+});
+
 async function generateTulisan() {
   const topik = document.getElementById("topik-input").value;
   tulisError.textContent = "";
@@ -78,6 +146,7 @@ async function generateTulisan() {
     paperFooterLabel.textContent = kategori;
     paperSkeleton.classList.add("hidden");
     paperCard.classList.remove("hidden");
+    playTulisMusic();
   } catch (err) {
     paperSkeleton.classList.add("hidden");
     tulisError.textContent = err.message;
@@ -150,16 +219,18 @@ async function kirimCurhat(pesanAwal) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text, history: curhatHistory }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     typingRow.remove();
-    if (!res.ok) throw new Error(data.error || "Gagal membalas pesan.");
+    if (!res.ok || !data.reply || !data.reply.trim()) {
+      throw new Error(data.error || "Server tidak memberikan balasan. Coba lagi.");
+    }
     addBubble(data.reply, "app");
     curhatHistory.push({ role: "user", content: text });
     curhatHistory.push({ role: "assistant", content: data.reply });
     curhatHistory = curhatHistory.slice(-10);
   } catch (err) {
     typingRow.remove();
-    addBubble("Maaf, aku belum bisa membalas sekarang. Coba kirim lagi sebentar ya.", "app");
+    addBubble(err.message || "Maaf, aku belum bisa membalas sekarang. Coba kirim lagi sebentar ya.", "app");
   } finally {
     btnSend.disabled = false;
   }

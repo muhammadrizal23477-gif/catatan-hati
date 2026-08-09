@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/style.css" />
+<link rel="icon" type="image/png" href="/img/favicon-64.png" />
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
 </head>
 <body>
   <div class="aurora" aria-hidden="true">
@@ -17,10 +19,58 @@
     <span class="orb orb-c"></span>
   </div>
 
-  <div class="shell">
+  <!-- ENTRY SCREEN -->
+  <div class="entry-screen" id="entry-screen">
+    <div class="entry-aurora" aria-hidden="true">
+      <span class="orb orb-a"></span>
+      <span class="orb orb-b"></span>
+    </div>
+
+    <div class="entry-content">
+      <div class="entry-brand">
+        <span class="brand-mark">
+          <img src="/img/dashboard-icon.jpg" alt="Catatan Hati" />
+        </span>
+        <div class="brand-text">
+          <div class="brand-title">Catatan Hati</div>
+          <div class="brand-sub">tulis rasa, dapat balasan</div>
+        </div>
+      </div>
+
+      <div class="entry-video-wrap">
+        <video
+          id="entry-video"
+          class="entry-video"
+          src="/media/intro-video.mp4"
+          autoplay
+          loop
+          muted
+          playsinline
+        ></video>
+        <button class="entry-sound-btn" id="entry-sound-btn" title="Aktifkan suara video">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M19 5a10 10 0 0 1 0 14M15.5 8.5a5 5 0 0 1 0 7" stroke-linecap="round" stroke-linejoin="round"/><line x1="3" y1="3" x2="21" y2="21" id="entry-mute-slash"/></svg>
+        </button>
+      </div>
+
+      <div class="entry-audio-row">
+        <span class="entry-audio-label">Musik pembuka</span>
+        <audio id="entry-audio" class="entry-audio" src="/media/intro-audio.mp3" controls loop></audio>
+      </div>
+
+      <button id="btn-masuk" class="primary-btn entry-btn">
+        <span class="btn-label">Masuk ke Aplikasi</span>
+        <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <p class="entry-hint">Ketuk tombol di atas saat kamu siap masuk.</p>
+    </div>
+  </div>
+
+  <div class="shell" id="shell">
     <header class="topbar">
       <div class="brand">
-        <span class="brand-mark">CH</span>
+        <span class="brand-mark">
+          <img src="/img/dashboard-icon.jpg" alt="Catatan Hati" />
+        </span>
         <div class="brand-text">
           <div class="brand-title">Catatan Hati</div>
           <div class="brand-sub">tulis rasa, dapat balasan</div>
@@ -85,6 +135,9 @@
           <div class="paper-footer">
             <span id="paper-footer-label"></span>
             <div class="paper-actions">
+              <button class="icon-btn" id="btn-mute-music" title="Bisukan musik">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M19 5a10 10 0 0 1 0 14M15.5 8.5a5 5 0 0 1 0 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
               <button class="icon-btn" id="btn-copy" title="Salin">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
               </button>
@@ -94,6 +147,7 @@
             </div>
           </div>
         </div>
+        <audio id="tulis-music" src="/media/tulis-music.mp3" loop preload="none"></audio>
       </section>
 
       <!-- TAB 2: Ruang Curhat -->
@@ -228,7 +282,9 @@
 
         <div class="profile-card">
           <div class="profile-top">
-            <div class="profile-avatar">MRF</div>
+            <div class="profile-avatar">
+              <img src="/img/developer-icon.jpg" alt="Muhamad Rizal Febiansyah" />
+            </div>
             <div class="profile-id">
               <div class="profile-name">Muhamad Rizal Febiansyah</div>
               <div class="profile-role">Developer &amp; Pembuat Catatan Hati</div>
