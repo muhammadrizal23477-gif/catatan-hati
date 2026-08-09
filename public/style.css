@@ -440,7 +440,8 @@ body {
 .suggest-chip:hover { border-color: var(--gold); background: var(--surface); }
 
 /* ---------- Chat bot perasaan ---------- */
-.chat-wrap { padding: 0; height: calc(100vh - 158px); height: calc(100dvh - 158px); display: flex; flex-direction: column; }
+.chat-wrap { padding: 0; height: calc(100vh - 158px); height: calc(100dvh - 158px); flex-direction: column; }
+.chat-wrap.active { display: flex; }
 .chat-head { padding: 22px 20px 12px; }
 
 .bubble-row.system { justify-content: center; }
@@ -825,7 +826,6 @@ body {
   -webkit-backdrop-filter: blur(18px);
   border-top: 1px solid var(--border-soft);
   gap: 4px;
-  position: relative;
 }
 
 .nav-btn {
