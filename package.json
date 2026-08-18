@@ -1,7 +1,7 @@
 {
   "name": "catatan-hati",
   "version": "1.0.0",
-  "description": "Aplikasi kata-kata, puisi, ruang curhat bermotivasi, dan unduh TikTok tanpa watermark",
+  "description": "Aplikasi kata-kata, puisi, editor teks di atas foto, dan unduh TikTok tanpa watermark",
   "main": "server.js",
   "type": "commonjs",
   "engines": {
@@ -13,6 +13,6 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "socket.io": "^4.7.5"
+    "dotenv": "^16.4.5"
   }
 }

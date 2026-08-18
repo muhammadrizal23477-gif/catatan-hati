@@ -1,3 +1,9 @@
+try {
+  require("dotenv").config();
+} catch {
+  // dotenv opsional — kalau tidak terpasang, lanjut pakai env var sistem saja
+}
+
 const express = require("express");
 const path = require("path");
 const { Readable } = require("stream");
@@ -7,6 +13,87 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
+// =========================================================================
+// AI — dipakai untuk kata-kata/puisi tak terbatas dan balasan curhat yang
+// mengalir natural. Mendukung dua provider, tinggal isi salah satu API key:
+//   - GROQ_API_KEY       -> pakai Groq (cepat, model open-source seperti Llama)
+//   - ANTHROPIC_API_KEY  -> pakai Claude (Anthropic)
+// Kalau keduanya diisi, Groq dipakai lebih dulu (bisa dipaksa lewat AI_PROVIDER).
+// Kalau tidak ada API key sama sekali / AI gagal merespons, server otomatis
+// jatuh ke bank konten lokal supaya aplikasi tetap jalan.
+// =========================================================================
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
+
+const AI_PROVIDER =
+  process.env.AI_PROVIDER || (GROQ_API_KEY ? "groq" : ANTHROPIC_API_KEY ? "anthropic" : "");
+
+const AI_AKTIF = Boolean(AI_PROVIDER);
+
+async function callGroq({ system, messages, maxTokens = 400, temperature = 1 }) {
+  const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      max_tokens: maxTokens,
+      temperature,
+      messages: [{ role: "system", content: system }, ...messages],
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => "");
+    throw new Error(`Groq API error ${resp.status}: ${errText.slice(0, 300)}`);
+  }
+
+  const data = await resp.json();
+  return (data.choices?.[0]?.message?.content || "").trim();
+}
+
+async function callAnthropic({ system, messages, maxTokens = 400, temperature = 1 }) {
+  const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: maxTokens,
+      temperature,
+      system,
+      messages,
+    }),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => "");
+    throw new Error(`Anthropic API error ${resp.status}: ${errText.slice(0, 300)}`);
+  }
+
+  const data = await resp.json();
+  const blokTeks = (data.content || []).find((b) => b.type === "text");
+  return blokTeks ? blokTeks.text.trim() : "";
+}
+
+async function callAI(params) {
+  if (!AI_AKTIF) {
+    const err = new Error("Belum ada API key AI yang diatur di server (GROQ_API_KEY / ANTHROPIC_API_KEY).");
+    err.code = "NO_API_KEY";
+    throw err;
+  }
+  if (AI_PROVIDER === "groq") return callGroq(params);
+  return callAnthropic(params);
+}
 
 // =========================================================================
 // KATA-KATA & PUISI — bank konten lokal, tidak butuh API key / AI eksternal
@@ -423,18 +510,126 @@ function formatNama(nama) {
     .join(" ");
 }
 
-app.post("/api/generate", (req, res) => {
-  const { kategori = "Motivasi", jenis = "kata", untuk = "" } = req.body || {};
-  const grup = KONTEN[kategori] || KONTEN.Motivasi;
-  const daftar = grup[jenis] || grup.kata;
-  let text = pilihAcak(daftar);
+const DAFTAR_KATEGORI = Object.keys(FRASA_KATA);
 
+app.post("/api/generate", async (req, res) => {
+  const { kategori = "Motivasi", jenis = "kata", untuk = "", topik = "" } = req.body || {};
+  const kategoriValid = DAFTAR_KATEGORI.includes(kategori) ? kategori : "Motivasi";
+  const jenisValid = jenis === "puisi" ? "puisi" : "kata";
   const namaTujuan = formatNama(untuk);
+
+  if (AI_AKTIF) {
+    try {
+      const bentuk = jenisValid === "puisi" ? "puisi pendek (4-8 baris, boleh dalam 2 bait)" : "kata-kata/quote singkat (1-3 kalimat)";
+      const sistemPrompt = [
+        "Kamu adalah penulis kata-kata dan puisi untuk aplikasi 'Catatan Hati', ruang aman untuk merasakan dan menyembuhkan hati.",
+        `Tugasmu: tulis SATU ${bentuk} yang baru dan orisinal dalam Bahasa Indonesia, bertema "${kategoriValid}".`,
+        "Aturan penting yang wajib dipatuhi:",
+        "- Selalu tetap pada topik/tema yang diminta, jangan pernah melenceng ke topik lain di luar tema.",
+        "- Gunakan Bahasa Indonesia yang hangat, puitis, mudah dipahami, dan terasa personal — hindari klise yang terlalu generik.",
+        "- Jangan pakai tanda kutip di awal/akhir, jangan beri judul, jangan beri penjelasan atau komentar tambahan, jangan pakai emoji.",
+        "- Balas HANYA dengan isi tulisannya saja, tanpa embel-embel apa pun.",
+        topik ? `- Selipkan nuansa atau detail berikut secara halus jika relevan: "${String(topik).slice(0, 200)}".` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const pesanUser = namaTujuan
+        ? `Tulis untuk seseorang bernama ${namaTujuan}.`
+        : "Tulis untuk pembaca secara umum.";
+
+      let text = await callAI({
+        system: sistemPrompt,
+        messages: [{ role: "user", content: pesanUser }],
+        maxTokens: jenisValid === "puisi" ? 300 : 150,
+        temperature: 1,
+      });
+
+      text = text.trim().replace(/^["“”]|["“”]$/g, "");
+      if (!text) throw new Error("Respons AI kosong.");
+
+      if (namaTujuan) text = `${namaTujuan},\n${text}`;
+      return res.json({ text, sumber: "ai" });
+    } catch (err) {
+      console.error("Gagal generate lewat AI, pakai bank lokal sebagai cadangan:", err.message);
+      // lanjut ke fallback lokal di bawah supaya pengguna tetap dapat hasil
+    }
+  }
+
+  // Fallback: bank konten lokal (dipakai kalau API key belum diatur atau AI gagal merespons)
+  const grup = KONTEN[kategoriValid] || KONTEN.Motivasi;
+  const daftar = grup[jenisValid] || grup.kata;
+  let text = pilihAcak(daftar);
   if (namaTujuan) {
     text = `${namaTujuan},\n${text}`;
   }
 
-  res.json({ text });
+  res.json({ text, sumber: "lokal" });
+});
+
+// =========================================================================
+// CURHAT — obrolan dengan AI (Claude), balasan tak terbatas & tetap fokus
+// ke topik perasaan pengguna. Butuh GROQ_API_KEY atau ANTHROPIC_API_KEY di environment.
+// =========================================================================
+const POLA_SIAGA = /(bunuh diri|mengakhiri hidup|nyakitin diri|menyakiti diri|melukai diri|self ?harm|ingin mati|pengen mati)/i;
+const HOTLINE_INFO =
+  "Kalau rasanya berat sekali, kamu tidak sendirian. Coba hubungi layanan Sejiwa di 119 ext 8, atau ceritakan ke orang terdekat yang kamu percaya. Bantuan profesional itu penting dan kamu berhak mendapatkannya.";
+
+app.post("/api/curhat", async (req, res) => {
+  const { pesan = "", riwayat = [] } = req.body || {};
+  const teks = String(pesan || "").trim();
+  if (!teks) return res.status(400).json({ error: "Pesan tidak boleh kosong." });
+  if (teks.length > 2000) {
+    return res.status(400).json({ error: "Pesan terlalu panjang, coba persingkat dulu ya." });
+  }
+
+  // Jaring pengaman keselamatan diperiksa di server, terlepas dari AI aktif atau tidak
+  if (POLA_SIAGA.test(teks)) {
+    return res.json({
+      balasan: `Aku dengar kamu, dan aku serius pengin kamu tetap aman. ${HOTLINE_INFO}`,
+      siaga: true,
+    });
+  }
+
+  if (!AI_AKTIF) {
+    return res.status(503).json({
+      error: "Fitur curhat AI belum aktif. Admin aplikasi perlu mengatur GROQ_API_KEY atau ANTHROPIC_API_KEY di server terlebih dahulu.",
+    });
+  }
+
+  try {
+    const sistemPrompt = [
+      "Kamu adalah CH, teman curhat di aplikasi 'Catatan Hati'. Perananmu adalah pendengar yang hangat, empatik, dan suportif — bukan terapis, bukan dokter, dan tidak memberi diagnosis.",
+      "Gaya bicara: santai, hangat, Bahasa Indonesia sehari-hari (boleh sedikit informal), ringkas (2-5 kalimat per balasan), tidak menggurui, tidak terdengar seperti template.",
+      "Selalu fokus pada perasaan dan cerita pengguna. Jangan membahas topik di luar curhat/perasaan (misalnya coding, tugas sekolah, berita, hal teknis lain) — kalau pengguna coba mengalihkan ke topik lain, arahkan kembali dengan lembut ke soal perasaan/curhatnya.",
+      "Validasi perasaan pengguna dulu sebelum buru-buru kasih saran. Sesekali ajukan pertanyaan lanjutan supaya mereka nyaman bercerita lebih jauh.",
+      "Kalau ada tanda-tanda pengguna dalam bahaya (ingin menyakiti diri sendiri/bunuh diri), utamakan keselamatan: sarankan hubungi layanan Sejiwa 119 ext 8 dan orang terdekat, dengan nada tenang dan peduli — bukan panik atau menghakimi.",
+      "Kamu adalah AI, bukan manusia sungguhan — jangan berpura-pura sebaliknya, tapi juga tidak perlu terus-menerus mengingatkan hal itu kalau tidak relevan dengan ceritanya.",
+    ].join("\n");
+
+    const riwayatValid = Array.isArray(riwayat) ? riwayat.slice(-12) : [];
+    const messages = [];
+    for (const item of riwayatValid) {
+      if (!item || !item.text) continue;
+      messages.push({
+        role: item.mine ? "user" : "assistant",
+        content: String(item.text).slice(0, 2000),
+      });
+    }
+    messages.push({ role: "user", content: teks });
+
+    const balasan = await callAI({
+      system: sistemPrompt,
+      messages,
+      maxTokens: 400,
+      temperature: 1,
+    });
+
+    res.json({ balasan: balasan || "Aku di sini dengerin kok, cerita lebih lanjut boleh banget." });
+  } catch (err) {
+    console.error("Gagal memanggil AI untuk curhat:", err.message);
+    res.status(502).json({ error: "Lagi ada gangguan menghubungi AI. Coba kirim pesannya lagi sebentar ya." });
+  }
 });
 
 // =========================================================================

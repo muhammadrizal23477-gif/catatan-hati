@@ -1,6 +1,20 @@
 # Catatan Hati
 
-Aplikasi web: generator kata-kata & puisi, ruang curhat dengan balasan motivasi otomatis (tidak terbatas), dan unduh video TikTok tanpa watermark.
+Aplikasi web: generator kata-kata & puisi bertenaga AI (tak terbatas, selalu sesuai tema), ruang curhat dengan balasan AI yang mengalir natural, editor teks di atas foto, jurnal suasana hati, dan unduh video TikTok tanpa watermark.
+
+## Tentang fitur AI (kata-kata & curhat)
+
+Menu **Kata & Puisi** dan **Curhat** memakai AI lewat API key milikmu sendiri. Server mendukung dua provider — tinggal isi salah satu:
+
+- **Groq** (`GROQ_API_KEY`) — cepat dan gratis untuk pemakaian ringan-menengah, model open-source seperti Llama 3.3. Dapatkan API key di [console.groq.com/keys](https://console.groq.com/keys).
+- **Anthropic Claude** (`ANTHROPIC_API_KEY`) — kualitas tulisan biasanya lebih halus. Dapatkan API key di [console.anthropic.com](https://console.anthropic.com).
+
+Kalau dua-duanya diisi, Groq dipakai lebih dulu (bisa dipaksa lewat env var `AI_PROVIDER=groq` atau `AI_PROVIDER=anthropic`).
+
+- **Kata & Puisi**: setiap kali kamu menekan "Tulis untukku", server meminta AI menulis kata-kata/puisi baru sesuai tema yang dipilih — jadi hasilnya tidak pernah kehabisan variasi dan tetap fokus ke tema.
+- **Curhat**: balasan chatbot "CH" dibuat oleh AI secara real-time berdasarkan isi ceritamu dan riwayat obrolan sebelumnya, jadi bisa mengobrol tanpa batas dan tetap nyambung ke topik perasaanmu (bukan melenceng ke topik lain).
+- Kalau belum ada API key yang diisi, atau server API sedang bermasalah, aplikasi otomatis jatuh ke bank konten lokal / bank respons lokal sebagai cadangan supaya tetap bisa dipakai.
+- Pesan yang mengandung tanda-tanda krisis (menyakiti diri/bunuh diri) selalu ditangani lebih dulu di server dengan info bantuan (layanan Sejiwa 119 ext 8), sebelum diproses AI.
 
 ## Menjalankan di komputer sendiri
 
@@ -9,7 +23,8 @@ Aplikasi web: generator kata-kata & puisi, ruang curhat dengan balasan motivasi 
    ```
    npm install
    ```
-3. Salin file `.env.example` menjadi `.env`, lalu isi `ANTHROPIC_API_KEY` dengan API key dari [console.anthropic.com](https://console.anthropic.com).
+3. Salin file `.env.example` menjadi `.env`, lalu isi salah satu: `GROQ_API_KEY` (dari [console.groq.com/keys](https://console.groq.com/keys)) atau `ANTHROPIC_API_KEY` (dari [console.anthropic.com](https://console.anthropic.com)).
+   - `GROQ_MODEL` / `ANTHROPIC_MODEL` opsional kalau mau ganti model dari default.
 4. Jalankan server:
    ```
    npm start
@@ -24,7 +39,9 @@ Aplikasi web: generator kata-kata & puisi, ruang curhat dengan balasan motivasi 
      - **Build Command**: `npm install`
      - **Start Command**: `npm start`
 3. Di bagian **Environment**, tambahkan environment variable:
+   - `GROQ_API_KEY` → isi dengan API key Groq kamu, ATAU
    - `ANTHROPIC_API_KEY` → isi dengan API key Anthropic kamu.
+   - `GROQ_MODEL` / `ANTHROPIC_MODEL` (opsional) → isi kalau ingin ganti model dari default.
 4. Klik **Create Web Service**. Setelah build selesai, aplikasi bisa diakses lewat URL `xxxx.onrender.com` yang diberikan Render.
 
 Catatan: paket gratis Render akan "tidur" setelah tidak ada aktivitas, jadi permintaan pertama setelah lama tidak dipakai bisa terasa lambat beberapa detik.
@@ -37,7 +54,7 @@ Fitur ini memanggil layanan publik pihak ketiga (tikwm.com) dari sisi server unt
 
 ```
 catatan-hati/
-├── server.js          # backend Express + endpoint API
+├── server.js          # backend Express + endpoint API (termasuk integrasi AI)
 ├── package.json
 ├── render.yaml         # konfigurasi deploy Render
 ├── .env.example
