@@ -141,32 +141,14 @@ document.getElementById("jenis-chips").addEventListener("click", (e) => {
 
 const btnGenerate = document.getElementById("btn-generate");
 const tulisError = document.getElementById("tulis-error");
-const paperOverlay = document.getElementById("paper-overlay");
 const paperCard = document.getElementById("paper-card");
 const paperSkeleton = document.getElementById("paper-skeleton");
 const paperText = document.getElementById("paper-text");
 const paperFooterLabel = document.getElementById("paper-footer-label");
 const btnCopy = document.getElementById("btn-copy");
 const btnRegen = document.getElementById("btn-regen");
-const btnPaperClose = document.getElementById("btn-paper-close");
 
 const tulisEmpty = document.getElementById("tulis-empty");
-
-function bukaPaperOverlay() {
-  paperOverlay.classList.remove("hidden");
-  document.body.classList.add("no-scroll");
-}
-
-function tutupPaperOverlay() {
-  paperOverlay.classList.add("hidden");
-  document.body.classList.remove("no-scroll");
-  stopTulisMusic();
-}
-
-btnPaperClose?.addEventListener("click", tutupPaperOverlay);
-paperOverlay?.addEventListener("click", (e) => {
-  if (e.target === paperOverlay) tutupPaperOverlay();
-});
 
 // ---------- Musik latar untuk hasil tulisan ----------
 const tulisMusic = document.getElementById("tulis-music");
@@ -193,13 +175,10 @@ btnMuteMusic?.addEventListener("click", () => {
   }
 });
 
-// Hentikan musik & tutup popup saat pindah ke tab lain
+// Hentikan musik saat pindah ke tab lain
 navButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
-    if (btn.dataset.tab !== "tulis") {
-      stopTulisMusic();
-      tutupPaperOverlay();
-    }
+    if (btn.dataset.tab !== "tulis") stopTulisMusic();
   });
 });
 
@@ -209,6 +188,7 @@ async function generateTulisan() {
   tulisError.textContent = "";
   btnGenerate.disabled = true;
   if (tulisEmpty) tulisEmpty.classList.add("hidden");
+  paperCard.classList.add("hidden");
   paperSkeleton.classList.remove("hidden");
   try {
     const res = await fetch("/api/generate", {
@@ -221,7 +201,7 @@ async function generateTulisan() {
     paperText.textContent = data.text;
     paperFooterLabel.textContent = kategori;
     paperSkeleton.classList.add("hidden");
-    bukaPaperOverlay();
+    paperCard.classList.remove("hidden");
     playTulisMusic();
   } catch (err) {
     paperSkeleton.classList.add("hidden");
@@ -397,23 +377,49 @@ function addBubble({ text, mine, system, typing }) {
   return row;
 }
 
-function kirimPesan(pesanAwal) {
+// Riwayat percakapan (disimpan di memori tab ini) supaya balasan AI ingat konteks obrolan sebelumnya.
+let riwayatChat = [];
+
+async function kirimPesan(pesanAwal) {
   const text = (pesanAwal ?? chatInput.value).trim();
   if (!text) return;
 
   if (suggestRow) suggestRow.classList.add("hidden");
   addBubble({ text, mine: true });
+  const riwayatSebelumnya = riwayatChat.slice();
+  riwayatChat.push({ mine: true, text });
   chatInput.value = "";
   chatInput.style.height = "auto";
   btnSend.disabled = true;
 
   const baris = addBubble({ mine: false, typing: true });
-  const jedaBalasan = 500 + Math.random() * 700;
-  setTimeout(() => {
+
+  try {
+    const res = await fetch("/api/curhat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pesan: text, riwayat: riwayatSebelumnya }),
+    });
+    const data = await res.json().catch(() => ({}));
     baris.remove();
-    addBubble({ text: buatBalasanBot(text), mine: false });
+
+    if (res.ok && data.balasan) {
+      addBubble({ text: data.balasan, mine: false });
+      riwayatChat.push({ mine: false, text: data.balasan });
+    } else {
+      // AI belum aktif / gagal merespons — tetap kasih balasan lewat bank respons lokal
+      const balasanCadangan = buatBalasanBot(text);
+      addBubble({ text: balasanCadangan, mine: false });
+      riwayatChat.push({ mine: false, text: balasanCadangan });
+    }
+  } catch {
+    baris.remove();
+    const balasanCadangan = buatBalasanBot(text);
+    addBubble({ text: balasanCadangan, mine: false });
+    riwayatChat.push({ mine: false, text: balasanCadangan });
+  } finally {
     btnSend.disabled = false;
-  }, jedaBalasan);
+  }
 }
 
 btnSend.addEventListener("click", () => kirimPesan());
